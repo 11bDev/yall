@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Yall
+Comment=Message to Nostr, Bluesky, and Mastodon from one place
+Exec=yall
+Icon=yall
+Terminal=false
+Categories=Network;Office;
+StartupWMClass=yall
+StartupNotify=true
