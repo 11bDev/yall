@@ -14,7 +14,7 @@ void main() {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const MultiPlatformPosterApp());
 
-        // Verify that our counter starts at 0.
+    // Verify that our counter starts at 0.
     expect(find.text('Welcome to Yall!'), findsOneWidget);
     expect(find.text('Yall'), findsOneWidget);
 

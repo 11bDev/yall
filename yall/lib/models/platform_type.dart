@@ -24,8 +24,10 @@ enum PlatformType {
   }
 
   /// Get all platform IDs as a list
-  static List<String> get allIds => PlatformType.values.map((p) => p.id).toList();
+  static List<String> get allIds =>
+      PlatformType.values.map((p) => p.id).toList();
 
   /// Get all display names as a list
-  static List<String> get allDisplayNames => PlatformType.values.map((p) => p.displayName).toList();
+  static List<String> get allDisplayNames =>
+      PlatformType.values.map((p) => p.displayName).toList();
 }

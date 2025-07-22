@@ -99,18 +99,9 @@ class _SettingsWindowState extends State<SettingsWindow>
           bottom: TabBar(
             controller: _tabController,
             tabs: const [
-              Tab(
-                icon: Icon(Icons.account_circle),
-                text: 'Accounts',
-              ),
-              Tab(
-                icon: Icon(Icons.palette),
-                text: 'Appearance',
-              ),
-              Tab(
-                icon: Icon(Icons.electrical_services),
-                text: 'Nostr',
-              ),
+              Tab(icon: Icon(Icons.account_circle), text: 'Accounts'),
+              Tab(icon: Icon(Icons.palette), text: 'Appearance'),
+              Tab(icon: Icon(Icons.electrical_services), text: 'Nostr'),
             ],
           ),
           actions: [

@@ -75,8 +75,8 @@ class NostrService extends SocialPlatformService {
 
       final rawPrivateKey = account.getCredential<String>('private_key')!;
       final privateKeyHex = _convertToHex(rawPrivateKey);
-      
-      // Use instance relays (from settings) instead of account-specific relays  
+
+      // Use instance relays (from settings) instead of account-specific relays
       final relays = _relays;
 
       // Validate private key format
@@ -209,10 +209,10 @@ class NostrService extends SocialPlatformService {
 
       final rawPrivateKey = account.getCredential<String>('private_key')!;
       final privateKeyHex = _convertToHex(rawPrivateKey);
-      
+
       // Use instance relays (from settings) instead of account-specific relays
       final relays = _relays;
-      
+
       print('NostrService: Using relays for posting: ${relays.join(', ')}');
 
       // Validate private key format
@@ -416,11 +416,11 @@ class NostrService extends SocialPlatformService {
 
     // BIP-340: Use x-coordinate only, ensure it represents even y
     final xCoordinate = publicKeyPoint!.x!.toBigInteger()!;
-    
+
     // For BIP-340, we need the x-coordinate of the point with even y
     // If y is odd, we don't negate (that's only for signing), we just use x as is
     // since Nostr public keys are just the x-coordinate
-    
+
     return xCoordinate.toRadixString(16).padLeft(64, '0');
   }
 
@@ -433,7 +433,9 @@ class NostrService extends SocialPlatformService {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
     print('Creating text note event:');
-    print('  Content: ${content.length > 50 ? '${content.substring(0, 50)}...' : content}');
+    print(
+      '  Content: ${content.length > 50 ? '${content.substring(0, 50)}...' : content}',
+    );
     print('  Public key: $publicKeyHex');
     print('  Timestamp: $now');
 
@@ -492,39 +494,43 @@ class NostrService extends SocialPlatformService {
 
     // Create private key
     final privateKeyInt = BigInt.parse(privateKeyHex, radix: 16);
-    
+
     // Ensure private key is in valid range [1, n-1]
     if (privateKeyInt <= BigInt.zero || privateKeyInt >= domainParams.n) {
       throw Exception('Invalid private key: out of valid range');
     }
 
-    print('Private key BigInt: ${privateKeyInt.toString().substring(0, 10)}...');
+    print(
+      'Private key BigInt: ${privateKeyInt.toString().substring(0, 10)}...',
+    );
 
     // BIP-340 Schnorr signature implementation
-    
+
     // Generate deterministic nonce k
     final auxBytes = Uint8List(32);
     for (int i = 0; i < 32; i++) {
       auxBytes[i] = _random.nextInt(256);
     }
-    
+
     // Create nonce using BIP-340 method: k = H(d || aux) where d is private key
     final nonceInput = <int>[];
     nonceInput.addAll(HEX.decode(privateKeyHex));
     nonceInput.addAll(auxBytes);
     final nonceHash = sha256.convert(nonceInput);
     var k = BigInt.parse(HEX.encode(nonceHash.bytes), radix: 16);
-    
+
     // Ensure k is in valid range [1, n-1]
     k = (k % (domainParams.n - BigInt.one)) + BigInt.one;
-    
+
     // Calculate R = k * G
     var R = domainParams.G * k;
     var rX = R!.x!.toBigInteger()!;
     var rY = R.y!.toBigInteger()!;
-    
-    print('Initial R: (${rX.toRadixString(16).substring(0, 16)}..., ${rY.toRadixString(16).substring(0, 16)}...)');
-    
+
+    print(
+      'Initial R: (${rX.toRadixString(16).substring(0, 16)}..., ${rY.toRadixString(16).substring(0, 16)}...)',
+    );
+
     // BIP-340 requirement: R.y must be even (quadratic residue)
     // If R.y is odd, negate k and recalculate R
     if (rY.isOdd) {
@@ -532,36 +538,40 @@ class NostrService extends SocialPlatformService {
       R = domainParams.G * k;
       rX = R!.x!.toBigInteger()!;
       rY = R.y!.toBigInteger()!;
-      print('Negated k, new R: (${rX.toRadixString(16).substring(0, 16)}..., ${rY.toRadixString(16).substring(0, 16)}...)');
+      print(
+        'Negated k, new R: (${rX.toRadixString(16).substring(0, 16)}..., ${rY.toRadixString(16).substring(0, 16)}...)',
+      );
     }
-    
+
     // Get public key point
     final publicKeyPoint = domainParams.G * privateKeyInt;
     final publicKeyX = publicKeyPoint!.x!.toBigInteger()!;
-    
+
     print('Public key X: ${publicKeyX.toRadixString(16).substring(0, 16)}...');
-    
+
     // BIP-340 challenge: e = H("BIP0340/challenge" || R_x || P_x || m)
     final challengeInput = <int>[];
-    
+
     // Add BIP-340 challenge tag
     final challengeTag = utf8.encode("BIP0340/challenge");
     final tagHash = sha256.convert(challengeTag);
     challengeInput.addAll(tagHash.bytes);
     challengeInput.addAll(tagHash.bytes);
-    
+
     challengeInput.addAll(_bigIntToBytes(rX, 32));
     challengeInput.addAll(_bigIntToBytes(publicKeyX, 32));
     challengeInput.addAll(eventIdBytes);
-    
+
     final challengeHash = sha256.convert(challengeInput);
-    final e = BigInt.parse(HEX.encode(challengeHash.bytes), radix: 16) % domainParams.n;
-    
+    final e =
+        BigInt.parse(HEX.encode(challengeHash.bytes), radix: 16) %
+        domainParams.n;
+
     print('Challenge e: ${e.toRadixString(16).substring(0, 16)}...');
-    
+
     // Calculate signature: s = k + e * d (mod n)
     final s = (k + (e * privateKeyInt)) % domainParams.n;
-    
+
     print('Signature r (R.x): ${rX.toRadixString(16).substring(0, 16)}...');
     print('Signature s: ${s.toRadixString(16).substring(0, 16)}...');
 
@@ -570,12 +580,14 @@ class NostrService extends SocialPlatformService {
     final sHex = s.toRadixString(16).padLeft(64, '0');
     final finalSignature = rHex + sHex;
 
-    print('Final signature (first 16 chars): ${finalSignature.substring(0, 16)}...');
+    print(
+      'Final signature (first 16 chars): ${finalSignature.substring(0, 16)}...',
+    );
     print('Final signature length: ${finalSignature.length}');
 
     return finalSignature;
   }
-  
+
   /// Convert BigInt to byte array with specified length
   Uint8List _bigIntToBytes(BigInt value, int length) {
     final hex = value.toRadixString(16).padLeft(length * 2, '0');
@@ -704,10 +716,10 @@ class NostrService extends SocialPlatformService {
   String _convertToHex(String privateKey) {
     print('Converting private key to hex, input length: ${privateKey.length}');
     print('Private key starts with: ${privateKey.substring(0, 4)}');
-    
+
     if (privateKey.startsWith('nsec')) {
       print('Processing as nsec format');
-      
+
       try {
         // Decode the bech32 nsec key
         final decoded = bech32.decode(privateKey);
@@ -718,7 +730,7 @@ class NostrService extends SocialPlatformService {
             message: 'Invalid nsec format: expected "nsec" prefix',
           );
         }
-        
+
         // Convert 5-bit data to 8-bit bytes using our helper
         final converted = _convertBits(decoded.data, 5, 8, false);
         if (converted.length != 32) {
@@ -728,12 +740,11 @@ class NostrService extends SocialPlatformService {
             message: 'Invalid nsec format: incorrect key length after decoding',
           );
         }
-        
+
         // Convert bytes to hex string
         final hexKey = HEX.encode(converted);
         print('Successfully converted nsec to hex, length: ${hexKey.length}');
         return hexKey;
-        
       } catch (e) {
         print('Error converting nsec to hex: $e');
         throw SocialPlatformException(
@@ -743,15 +754,20 @@ class NostrService extends SocialPlatformService {
         );
       }
     }
-    
+
     print('Processing as hex format');
     // Handle hex format - pad with leading zeros if needed
-    String hexKey = privateKey.toLowerCase().replaceAll(RegExp(r'[^0-9a-f]'), '');
+    String hexKey = privateKey.toLowerCase().replaceAll(
+      RegExp(r'[^0-9a-f]'),
+      '',
+    );
     if (hexKey.length < 64) {
       hexKey = hexKey.padLeft(64, '0');
-      print('Padded hex key from ${privateKey.length} to ${hexKey.length} characters');
+      print(
+        'Padded hex key from ${privateKey.length} to ${hexKey.length} characters',
+      );
     }
-    
+
     print('Final hex key length: ${hexKey.length}');
     return hexKey;
   }
@@ -832,7 +848,12 @@ class NostrService extends SocialPlatformService {
   }
 
   /// Static helper for bit conversion
-  static List<int> _convertBitsStatic(List<int> data, int fromBits, int toBits, bool pad) {
+  static List<int> _convertBitsStatic(
+    List<int> data,
+    int fromBits,
+    int toBits,
+    bool pad,
+  ) {
     int acc = 0;
     int bits = 0;
     List<int> ret = [];

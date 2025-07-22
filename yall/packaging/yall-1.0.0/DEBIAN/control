@@ -1,0 +1,11 @@
+Package: yall
+Version: 1.0.0
+Architecture: amd64
+Maintainer: Tim Apple <tim@example.com>
+Description: Multi-platform social media poster
+ Yall is a Flutter-based cross-platform social media poster that lets you 
+ send messages to multiple social platforms simultaneously. Supports Nostr, 
+ Bluesky, and Mastodon with smart character limits and content truncation.
+Depends: libgtk-3-0, libglib2.0-0, libc6
+Section: utils
+Priority: optional

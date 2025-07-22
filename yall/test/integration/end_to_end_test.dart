@@ -8,7 +8,9 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('End-to-End User Workflow Tests', () {
-    testWidgets('Complete application lifecycle test', (WidgetTester tester) async {
+    testWidgets('Complete application lifecycle test', (
+      WidgetTester tester,
+    ) async {
       // Start the app
       app.main();
       await tester.pumpAndSettle();
@@ -60,7 +62,9 @@ void main() {
       expect(find.text('Yall'), findsOneWidget);
     });
 
-    testWidgets('Help dialog keyboard shortcut test', (WidgetTester tester) async {
+    testWidgets('Help dialog keyboard shortcut test', (
+      WidgetTester tester,
+    ) async {
       app.main();
       await tester.pumpAndSettle();
 
@@ -109,7 +113,7 @@ void main() {
 
       // Find platform checkboxes (assuming they exist)
       final platformCheckboxes = find.byType(Checkbox);
-      
+
       if (platformCheckboxes.evaluate().isNotEmpty) {
         // Test selecting/deselecting platforms
         await tester.tap(platformCheckboxes.first);
@@ -126,16 +130,16 @@ void main() {
 
       // This test would verify that errors are properly displayed to users
       // The specific implementation depends on how errors are shown
-      
+
       // For now, just verify the app doesn't crash during normal operation
       expect(find.text('Yall'), findsOneWidget);
-      
+
       // Test that the app handles navigation gracefully
       final settingsButton = find.byIcon(Icons.settings);
       if (settingsButton.evaluate().isNotEmpty) {
         await tester.tap(settingsButton);
         await tester.pumpAndSettle();
-        
+
         // Navigate back
         await tester.pageBack();
         await tester.pumpAndSettle();
@@ -148,20 +152,20 @@ void main() {
 
       // Test semantic labels and accessibility
       final semanticsHandle = tester.binding.pipelineOwner.semanticsOwner!;
-      
+
       // Verify semantic information is available
       expect(semanticsHandle.rootSemanticsNode, isNotNull);
-      
+
       // Test tooltips are present on important buttons
       final settingsButton = find.byIcon(Icons.settings);
       if (settingsButton.evaluate().isNotEmpty) {
         // Long press to show tooltip
         await tester.longPress(settingsButton);
         await tester.pumpAndSettle();
-        
+
         // Verify tooltip appears
         expect(find.text('Open Settings (Ctrl+,)'), findsOneWidget);
-        
+
         // Dismiss tooltip
         await tester.tap(find.byType(Scaffold));
         await tester.pumpAndSettle();
@@ -174,10 +178,10 @@ void main() {
 
       // Test window state management
       expect(find.text('Yall'), findsOneWidget);
-      
+
       // Simulate window resize or state changes
       // This would require platform-specific testing
-      
+
       // For now, verify the app maintains state correctly
       await tester.pump(const Duration(seconds: 1));
       expect(find.text('Yall'), findsOneWidget);

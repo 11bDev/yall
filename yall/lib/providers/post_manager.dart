@@ -299,7 +299,8 @@ class PostManager extends ChangeNotifier {
         platformContent = content.substring(0, characterLimit);
         // Optionally add an ellipsis to indicate truncation
         if (platformContent.length >= 3) {
-          platformContent = platformContent.substring(0, platformContent.length - 3) + '...';
+          platformContent =
+              platformContent.substring(0, platformContent.length - 3) + '...';
         }
       }
 
@@ -326,7 +327,10 @@ class PostManager extends ChangeNotifier {
       }
 
       // Attempt to publish the post with retry logic (using truncated content)
-      final result = await service.publishPostWithRetry(platformContent, account);
+      final result = await service.publishPostWithRetry(
+        platformContent,
+        account,
+      );
 
       // Update progress based on result
       if (result.isSuccessful(platform)) {

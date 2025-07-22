@@ -76,7 +76,8 @@ class AppSettings {
   /// Create settings from JSON
   factory AppSettings.fromJson(Map<String, dynamic> json) {
     final defaultAccountsMap = <PlatformType, String>{};
-    final defaultAccountsJson = json['defaultAccounts'] as Map<String, dynamic>? ?? {};
+    final defaultAccountsJson =
+        json['defaultAccounts'] as Map<String, dynamic>? ?? {};
 
     for (final entry in defaultAccountsJson.entries) {
       try {
@@ -96,8 +97,8 @@ class AppSettings {
       autoSaveContent: json['autoSaveContent'] as bool? ?? true,
       showCharacterCount: json['showCharacterCount'] as bool? ?? true,
       confirmBeforePosting: json['confirmBeforePosting'] as bool? ?? false,
-      nostrRelays: (json['nostrRelays'] as List<dynamic>?)
-          ?.cast<String>() ??
+      nostrRelays:
+          (json['nostrRelays'] as List<dynamic>?)?.cast<String>() ??
           const [
             'wss://relay.damus.io',
             'wss://nos.lol',
@@ -136,7 +137,9 @@ class AppSettings {
 
   /// Set custom Nostr relays (max 10)
   AppSettings setNostrRelays(List<String> relays) {
-    final validRelays = relays.where((relay) => _isValidRelayUrl(relay)).toList();
+    final validRelays = relays
+        .where((relay) => _isValidRelayUrl(relay))
+        .toList();
     final limitedRelays = validRelays.take(10).toList();
     return copyWith(nostrRelays: limitedRelays);
   }
@@ -146,7 +149,7 @@ class AppSettings {
     if (!_isValidRelayUrl(relay)) return this;
     if (nostrRelays.contains(relay)) return this;
     if (nostrRelays.length >= 10) return this;
-    
+
     final newRelays = List<String>.from(nostrRelays);
     newRelays.add(relay);
     return copyWith(nostrRelays: newRelays);
@@ -161,12 +164,14 @@ class AppSettings {
 
   /// Reset Nostr relays to defaults
   AppSettings resetNostrRelaysToDefault() {
-    return copyWith(nostrRelays: const [
-      'wss://relay.damus.io',
-      'wss://nos.lol',
-      'wss://relay.snort.social',
-      'wss://relay.nostr.band',
-    ]);
+    return copyWith(
+      nostrRelays: const [
+        'wss://relay.damus.io',
+        'wss://nos.lol',
+        'wss://relay.snort.social',
+        'wss://relay.nostr.band',
+      ],
+    );
   }
 
   /// Validate if a URL is a valid WebSocket relay URL
@@ -224,7 +229,9 @@ class AppSettings {
       themeMode,
       minimizeToTray,
       startMinimized,
-      Object.hashAll(defaultAccounts.entries.map((e) => Object.hash(e.key, e.value))),
+      Object.hashAll(
+        defaultAccounts.entries.map((e) => Object.hash(e.key, e.value)),
+      ),
       autoSaveContent,
       showCharacterCount,
       confirmBeforePosting,

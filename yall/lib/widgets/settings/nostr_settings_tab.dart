@@ -8,11 +8,7 @@ class NostrSettingsTab extends StatefulWidget {
   final VoidCallback? onChanged;
   final VoidCallback? onSaved;
 
-  const NostrSettingsTab({
-    super.key,
-    this.onChanged,
-    this.onSaved,
-  });
+  const NostrSettingsTab({super.key, this.onChanged, this.onSaved});
 
   @override
   State<NostrSettingsTab> createState() => _NostrSettingsTabState();
@@ -59,18 +55,18 @@ class _NostrSettingsTabState extends State<NostrSettingsTab> {
     try {
       final themeManager = Provider.of<ThemeManager>(context, listen: false);
       final postManager = Provider.of<PostManager>(context, listen: false);
-      
+
       final newSettings = themeManager.settings.setNostrRelays(_currentRelays);
       await themeManager.updateSettings(newSettings);
-      
+
       // Update the PostManager's NostrService with new relays
       postManager.updateNostrRelays(_currentRelays);
-      
+
       setState(() {
         _hasChanges = false;
       });
       widget.onSaved?.call();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -94,9 +90,9 @@ class _NostrSettingsTabState extends State<NostrSettingsTab> {
   /// Add a new relay
   void _addRelay() {
     final relayUrl = _relayController.text.trim();
-    
+
     if (relayUrl.isEmpty) return;
-    
+
     // Validate relay URL format
     if (!_isValidRelayUrl(relayUrl)) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -107,7 +103,7 @@ class _NostrSettingsTabState extends State<NostrSettingsTab> {
       );
       return;
     }
-    
+
     // Check if relay already exists
     if (_currentRelays.contains(relayUrl)) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -118,7 +114,7 @@ class _NostrSettingsTabState extends State<NostrSettingsTab> {
       );
       return;
     }
-    
+
     // Check relay limit
     if (_currentRelays.length >= 10) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -129,7 +125,7 @@ class _NostrSettingsTabState extends State<NostrSettingsTab> {
       );
       return;
     }
-    
+
     setState(() {
       _currentRelays.add(relayUrl);
       _relayController.clear();
@@ -220,7 +216,7 @@ class _NostrSettingsTabState extends State<NostrSettingsTab> {
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // Add relay section
             Card(
               child: Padding(
@@ -261,7 +257,7 @@ class _NostrSettingsTabState extends State<NostrSettingsTab> {
               ),
             ),
             const SizedBox(height: 16),
-            
+
             // Relay count and actions
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -278,8 +274,12 @@ class _NostrSettingsTabState extends State<NostrSettingsTab> {
                         icon: const Icon(Icons.save),
                         label: const Text('Save'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.primary,
-                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.primary,
+                          foregroundColor: Theme.of(
+                            context,
+                          ).colorScheme.onPrimary,
                         ),
                       ),
                     const SizedBox(width: 8),
@@ -293,7 +293,7 @@ class _NostrSettingsTabState extends State<NostrSettingsTab> {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // Relay list
             Expanded(
               child: _currentRelays.isEmpty
@@ -304,21 +304,29 @@ class _NostrSettingsTabState extends State<NostrSettingsTab> {
                           Icon(
                             Icons.electrical_services_outlined,
                             size: 64,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                           const SizedBox(height: 16),
                           Text(
                             'No relays configured',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             'Add some relays to get started',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
                           ),
                         ],
                       ),

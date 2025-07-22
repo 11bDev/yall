@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../../models/account.dart';
 import '../../models/platform_type.dart';
 import '../../providers/account_manager.dart';
-import '../../services/nostr_service.dart';
 
 /// Dialog for editing an existing social media account
 class EditAccountDialog extends StatefulWidget {
@@ -51,11 +50,15 @@ class _EditAccountDialogState extends State<EditAccountDialog> {
   }
 
   void _initializeControllers() {
-    _displayNameController = TextEditingController(text: widget.account.displayName);
+    _displayNameController = TextEditingController(
+      text: widget.account.displayName,
+    );
     _usernameController = TextEditingController(text: widget.account.username);
 
     // Initialize credential fields
-    final requiredFields = _getRequiredCredentialFields(widget.account.platform);
+    final requiredFields = _getRequiredCredentialFields(
+      widget.account.platform,
+    );
     for (final field in requiredFields) {
       final value = widget.account.getCredential<String>(field) ?? '';
       _credentialControllers[field] = TextEditingController(text: value);
@@ -178,7 +181,9 @@ class _EditAccountDialogState extends State<EditAccountDialog> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -186,9 +191,9 @@ class _EditAccountDialogState extends State<EditAccountDialog> {
         children: [
           Text(
             'Account Information',
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Row(
@@ -196,9 +201,9 @@ class _EditAccountDialogState extends State<EditAccountDialog> {
               Text('Platform: ', style: Theme.of(context).textTheme.bodySmall),
               Text(
                 widget.account.platform.displayName,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
               ),
             ],
           ),
@@ -208,9 +213,9 @@ class _EditAccountDialogState extends State<EditAccountDialog> {
               Text('Created: ', style: Theme.of(context).textTheme.bodySmall),
               Text(
                 _formatDate(widget.account.createdAt),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
               ),
             ],
           ),
@@ -321,10 +326,14 @@ class _EditAccountDialogState extends State<EditAccountDialog> {
     );
   }
 
-  Widget _buildCredentialField(String fieldName, TextEditingController controller) {
-    final isPassword = fieldName.contains('password') ||
-                      fieldName.contains('token') ||
-                      fieldName.contains('key');
+  Widget _buildCredentialField(
+    String fieldName,
+    TextEditingController controller,
+  ) {
+    final isPassword =
+        fieldName.contains('password') ||
+        fieldName.contains('token') ||
+        fieldName.contains('key');
 
     return TextFormField(
       controller: controller,
@@ -356,7 +365,9 @@ class _EditAccountDialogState extends State<EditAccountDialog> {
       case 'private_key':
         return 'Private Key';
       default:
-        return fieldName.replaceAll('_', ' ').split(' ')
+        return fieldName
+            .replaceAll('_', ' ')
+            .split(' ')
             .map((word) => word[0].toUpperCase() + word.substring(1))
             .join(' ');
     }

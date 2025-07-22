@@ -291,7 +291,9 @@ class _PostingWidgetState extends State<PostingWidget> {
       return const SizedBox.shrink();
     }
 
-    final limits = postManager.getCharacterLimitsForPlatforms(_selectedPlatforms);
+    final limits = postManager.getCharacterLimitsForPlatforms(
+      _selectedPlatforms,
+    );
     final contentLength = content.length;
     final platformsWithIssues = <PlatformType>[];
 
@@ -342,7 +344,9 @@ class _PostingWidgetState extends State<PostingWidget> {
                     Text(
                       'Content will be truncated',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSecondaryContainer,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSecondaryContainer,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -357,7 +361,9 @@ class _PostingWidgetState extends State<PostingWidget> {
                     child: Text(
                       '${platform.displayName}: ${excess} characters will be removed (limit: $limit)',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSecondaryContainer,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSecondaryContainer,
                       ),
                     ),
                   );
@@ -373,16 +379,16 @@ class _PostingWidgetState extends State<PostingWidget> {
   Widget _buildLimitsSummary(Map<PlatformType, int> limits, int contentLength) {
     final hasUnlimited = limits.values.any((limit) => limit == 0);
     final finiteLimits = limits.entries.where((e) => e.value > 0).toList();
-    
+
     if (finiteLimits.isEmpty && hasUnlimited) {
       return Text(
         'No character limit',
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: Colors.green,
-        ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodySmall?.copyWith(color: Colors.green),
       );
     }
-    
+
     if (finiteLimits.length == 1) {
       final entry = finiteLimits.first;
       final remaining = entry.value - contentLength;
@@ -394,11 +400,12 @@ class _PostingWidgetState extends State<PostingWidget> {
         ),
       );
     }
-    
-    final mostRestrictive = finiteLimits
-        .reduce((a, b) => a.value < b.value ? a : b);
+
+    final mostRestrictive = finiteLimits.reduce(
+      (a, b) => a.value < b.value ? a : b,
+    );
     final remaining = mostRestrictive.value - contentLength;
-    
+
     return Text(
       'Most restrictive: ${mostRestrictive.key.displayName} ($remaining remaining)',
       style: Theme.of(context).textTheme.bodySmall?.copyWith(

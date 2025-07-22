@@ -38,7 +38,7 @@ class ShowHelpIntent extends Intent {
 void main() async {
   // Ensure Flutter is initialized
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Set up global error handling
   _setupGlobalErrorHandling();
 
@@ -60,7 +60,7 @@ void main() async {
     await windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.show();
       await windowManager.focus();
-      
+
       // Set window icon
       try {
         if (Platform.isLinux || Platform.isWindows) {
@@ -127,9 +127,9 @@ class _MainWindowState extends State<MainWindow> {
   Future<void> _initializeServices() async {
     final themeManager = context.read<ThemeManager>();
     final postManager = context.read<PostManager>();
-    
+
     print('Initializing services...');
-    
+
     // Wait for ThemeManager to load settings
     if (!themeManager.isInitialized) {
       print('ThemeManager not initialized, loading settings...');
@@ -137,12 +137,14 @@ class _MainWindowState extends State<MainWindow> {
     } else {
       print('ThemeManager already initialized');
     }
-    
-    print('Current Nostr relays from settings: ${themeManager.settings.nostrRelays.join(', ')}');
-    
+
+    print(
+      'Current Nostr relays from settings: ${themeManager.settings.nostrRelays.join(', ')}',
+    );
+
     // Update NostrService with relay settings
     postManager.updateNostrRelays(themeManager.settings.nostrRelays);
-    
+
     print('Services initialization complete');
   }
 
@@ -271,10 +273,14 @@ class _MainWindowState extends State<MainWindow> {
       },
       child: Shortcuts(
         shortcuts: <LogicalKeySet, Intent>{
-          LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyN): const NewPostIntent(),
-          LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.enter): const SubmitPostIntent(),
-          LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.comma): const OpenSettingsIntent(),
-          LogicalKeySet(LogicalKeyboardKey.escape): const CancelOperationIntent(),
+          LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyN):
+              const NewPostIntent(),
+          LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.enter):
+              const SubmitPostIntent(),
+          LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.comma):
+              const OpenSettingsIntent(),
+          LogicalKeySet(LogicalKeyboardKey.escape):
+              const CancelOperationIntent(),
           LogicalKeySet(LogicalKeyboardKey.f1): const ShowHelpIntent(),
         },
         child: Actions(
@@ -296,45 +302,46 @@ class _MainWindowState extends State<MainWindow> {
             ),
           },
           child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Yall'),
-          centerTitle: true,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.settings),
-              tooltip: 'Open Settings (Ctrl+,)',
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const SettingsWindow(),
-                  ),
-                );
-              },
+            appBar: AppBar(
+              title: const Text('Yall'),
+              centerTitle: true,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.settings),
+                  tooltip: 'Open Settings (Ctrl+,)',
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const SettingsWindow(),
+                      ),
+                    );
+                  },
+                ),
+                Consumer2<SystemTrayManager, WindowStateManager>(
+                  builder:
+                      (context, systemTrayManager, windowStateManager, child) {
+                        if (systemTrayManager.isInitialized) {
+                          return IconButton(
+                            icon: const Icon(Icons.minimize),
+                            tooltip: 'Minimize to tray',
+                            onPressed: () async {
+                              if (windowStateManager.isInitialized) {
+                                await windowStateManager.hideWindow();
+                              } else {
+                                await systemTrayManager.minimizeToTray();
+                              }
+                            },
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                ),
+              ],
             ),
-            Consumer2<SystemTrayManager, WindowStateManager>(
-              builder: (context, systemTrayManager, windowStateManager, child) {
-                if (systemTrayManager.isInitialized) {
-                  return IconButton(
-                    icon: const Icon(Icons.minimize),
-                    tooltip: 'Minimize to tray',
-                    onPressed: () async {
-                      if (windowStateManager.isInitialized) {
-                        await windowStateManager.hideWindow();
-                      } else {
-                        await systemTrayManager.minimizeToTray();
-                      }
-                    },
-                  );
-                }
-                return const SizedBox.shrink();
-              },
+            body: Semantics(
+              label: 'Main posting area',
+              child: const SingleChildScrollView(child: PostingWidget()),
             ),
-          ],
-        ),
-        body: Semantics(
-          label: 'Main posting area',
-          child: const SingleChildScrollView(child: PostingWidget()),
-        ),
           ),
         ),
       ),
@@ -358,11 +365,9 @@ class _MainWindowState extends State<MainWindow> {
   }
 
   void _handleOpenSettings() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const SettingsWindow(),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const SettingsWindow()));
   }
 
   void _handleCancelOperation() {
@@ -434,11 +439,7 @@ void _setupGlobalErrorHandling() {
 
   // Handle platform errors (like platform channel errors)
   PlatformDispatcher.instance.onError = (error, stack) {
-    errorHandler.logError(
-      'Platform Error',
-      error,
-      stackTrace: stack,
-    );
+    errorHandler.logError('Platform Error', error, stackTrace: stack);
     return true;
   };
 
@@ -452,11 +453,7 @@ void _setupGlobalErrorHandling() {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.error_outline,
-                  color: Colors.red,
-                  size: 48,
-                ),
+                const Icon(Icons.error_outline, color: Colors.red, size: 48),
                 const SizedBox(height: 16),
                 const Text(
                   'Something went wrong',

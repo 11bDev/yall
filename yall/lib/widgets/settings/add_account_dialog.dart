@@ -199,7 +199,7 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
       children: [
         Text('Authentication', style: Theme.of(context).textTheme.titleSmall),
         const SizedBox(height: 8),
-        if (widget.platform == PlatformType.nostr) 
+        if (widget.platform == PlatformType.nostr)
           _buildNostrCredentialFields()
         else
           ..._credentialControllers.entries.map((entry) {
@@ -223,7 +223,8 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
             labelText: 'Private Key (nsec format)',
             hintText: 'nsec1... (recommended)',
             prefixIcon: Icon(Icons.key_outlined),
-            helperText: 'Enter your nsec private key - it will be converted to hex automatically',
+            helperText:
+                'Enter your nsec private key - it will be converted to hex automatically',
           ),
           onChanged: (value) {
             if (value.startsWith('nsec')) {
@@ -236,14 +237,16 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
             }
           },
           validator: (value) {
-            if (value != null && value.isNotEmpty && !value.startsWith('nsec')) {
+            if (value != null &&
+                value.isNotEmpty &&
+                !value.startsWith('nsec')) {
               return 'Please enter a valid nsec private key (starts with nsec1...)';
             }
             return null;
           },
         ),
         const SizedBox(height: 12),
-        
+
         // Hex output field (read-only)
         TextFormField(
           controller: _credentialControllers['private_key'],
@@ -251,7 +254,8 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
             labelText: 'Private Key (hex format)',
             hintText: 'Auto-filled from nsec above, or enter hex directly',
             prefixIcon: Icon(Icons.vpn_key),
-            helperText: 'This is the actual key used for signing (64 hex characters)',
+            helperText:
+                'This is the actual key used for signing (64 hex characters)',
           ),
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
