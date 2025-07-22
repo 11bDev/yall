@@ -300,7 +300,7 @@ class PostManager extends ChangeNotifier {
         // Optionally add an ellipsis to indicate truncation
         if (platformContent.length >= 3) {
           platformContent =
-              platformContent.substring(0, platformContent.length - 3) + '...';
+              '${platformContent.substring(0, platformContent.length - 3)}...';
         }
       }
 

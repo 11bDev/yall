@@ -27,8 +27,8 @@ void main() {
       when(mockPostManager.isPosting).thenReturn(false);
       when(mockPostManager.error).thenReturn(null);
       when(mockPostManager.canPost(any, any)).thenReturn(true);
-      when(mockPostManager.getCharacterLimit(any)).thenReturn(280);
-      when(mockPostManager.getRemainingCharacters(any, any)).thenReturn(280);
+      when(mockPostManager.getCharacterLimit(any)).thenReturn(800);
+      when(mockPostManager.getRemainingCharacters(any, any)).thenReturn(800);
 
       when(mockAccountManager.getActiveAccountsForPlatform(any)).thenReturn([]);
       when(mockAccountManager.getDefaultAccountForPlatform(any)).thenReturn(null);
@@ -86,8 +86,8 @@ void main() {
 
     testWidgets('shows character counter when platforms selected', (WidgetTester tester) async {
       // Set up mock to return character limit
-      when(mockPostManager.getCharacterLimit(any)).thenReturn(280);
-      when(mockPostManager.getRemainingCharacters(any, any)).thenReturn(280);
+      when(mockPostManager.getCharacterLimit(any)).thenReturn(800);
+      when(mockPostManager.getRemainingCharacters(any, any)).thenReturn(800);
 
       await tester.pumpWidget(createTestWidget());
 
@@ -95,7 +95,7 @@ void main() {
       await tester.enterText(find.byType(TextField), 'Test message');
       await tester.pump();
 
-      expect(find.text('Character limit: 280'), findsOneWidget);
+      expect(find.text('Character limit: 800'), findsOneWidget);
       expect(find.textContaining('remaining'), findsOneWidget);
     });
 
@@ -368,13 +368,13 @@ void main() {
     });
 
     testWidgets('updates character counter when text changes', (WidgetTester tester) async {
-      when(mockPostManager.getCharacterLimit(any)).thenReturn(280);
-      when(mockPostManager.getRemainingCharacters('', any)).thenReturn(280);
-      when(mockPostManager.getRemainingCharacters('Hello', any)).thenReturn(275);
+      when(mockPostManager.getCharacterLimit(any)).thenReturn(800);
+      when(mockPostManager.getRemainingCharacters('', any)).thenReturn(800);
+      when(mockPostManager.getRemainingCharacters('Hello', any)).thenReturn(795);
 
       await tester.pumpWidget(createTestWidget());
 
-      // Initially should show 280 remaining
+      // Initially should show 800 remaining
       await tester.enterText(find.byType(TextField), '');
       await tester.pump();
 

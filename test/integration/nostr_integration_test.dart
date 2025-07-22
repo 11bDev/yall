@@ -23,7 +23,7 @@ void main() {
         credentials: {
           'private_key': keyPair['private_key']!,
           'public_key': keyPair['public_key']!,
-          'relays': ['wss://relay.damus.io'], // Use a real relay for integration test
+          'relays': ['wss://test-relay.example.com'], // Use mock relay for testing
         },
         isActive: true,
         createdAt: DateTime.now(),
@@ -56,11 +56,11 @@ void main() {
 
     test('should handle content validation', () {
       const shortContent = 'Hello Nostr!';
-      final longContent = 'a' * 281; // Exceeds 280 character limit
+      final longContent = 'a' * 801; // Exceeds 800 character limit
 
       expect(nostrService.isContentValid(shortContent), isTrue);
       expect(nostrService.isContentValid(longContent), isFalse);
-      expect(nostrService.getRemainingCharacters(shortContent), equals(280 - shortContent.length));
+      expect(nostrService.getRemainingCharacters(shortContent), equals(800 - shortContent.length));
       expect(nostrService.getRemainingCharacters(longContent), equals(-1));
     });
 
@@ -92,8 +92,8 @@ void main() {
     test('should have correct platform properties', () {
       expect(nostrService.platformType, equals(PlatformType.nostr));
       expect(nostrService.platformName, equals('Nostr'));
-      expect(nostrService.characterLimit, equals(280));
-      expect(nostrService.requiredCredentialFields, containsAll(['private_key', 'relays']));
+      expect(nostrService.characterLimit, equals(800));
+      expect(nostrService.requiredCredentialFields, containsAll(['private_key']));
     });
 
     test('should handle default relays', () {

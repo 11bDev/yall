@@ -367,9 +367,13 @@ class NostrService extends SocialPlatformService {
     final relays = account.getCredential<List<String>>('relays');
 
     // Validate private key format
-    if (rawPrivateKey == null ||
-        !_isValidPrivateKey(_convertToHex(rawPrivateKey))) {
-      return false;
+    if (rawPrivateKey == null) return false;
+    
+    try {
+      final hexKey = _convertToHex(rawPrivateKey);
+      if (!_isValidPrivateKey(hexKey)) return false;
+    } catch (e) {
+      return false; // Invalid key format that throws exception during conversion
     }
 
     // Validate relays format
@@ -756,15 +760,18 @@ class NostrService extends SocialPlatformService {
     }
 
     print('Processing as hex format');
-    // Handle hex format - pad with leading zeros if needed
+    // Handle hex format - must be exactly 64 hex characters
     String hexKey = privateKey.toLowerCase().replaceAll(
       RegExp(r'[^0-9a-f]'),
       '',
     );
-    if (hexKey.length < 64) {
-      hexKey = hexKey.padLeft(64, '0');
-      print(
-        'Padded hex key from ${privateKey.length} to ${hexKey.length} characters',
+    
+    // Validate hex key length
+    if (hexKey.length != 64) {
+      throw SocialPlatformException(
+        platform: platformType,
+        errorType: PostErrorType.invalidCredentials,
+        message: 'Private key must be exactly 64 hex characters, got ${hexKey.length}',
       );
     }
 

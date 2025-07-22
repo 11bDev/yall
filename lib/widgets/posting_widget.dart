@@ -359,7 +359,7 @@ class _PostingWidgetState extends State<PostingWidget> {
                   return Padding(
                     padding: const EdgeInsets.only(left: 24, top: 2),
                     child: Text(
-                      '${platform.displayName}: ${excess} characters will be removed (limit: $limit)',
+                      '${platform.displayName}: $excess characters will be removed (limit: $limit)',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(
                           context,
@@ -367,7 +367,7 @@ class _PostingWidgetState extends State<PostingWidget> {
                       ),
                     ),
                   );
-                }).toList(),
+                }),
               ],
             ),
           ),

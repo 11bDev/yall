@@ -407,7 +407,7 @@ void main() {
       test('should handle Nostr platform correctly', () {
         final service = MockSocialPlatformServiceFactory.createSuccessful(PlatformType.nostr);
         expect(service.platformType, equals(PlatformType.nostr));
-        expect(service.characterLimit, equals(280));
+        expect(service.characterLimit, equals(800));
         expect(service.requiredCredentialFields, contains('private_key'));
       });
 

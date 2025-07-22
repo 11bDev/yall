@@ -24,7 +24,7 @@ void main() {
       // Nostr
       expect(PlatformType.nostr.id, 'nostr');
       expect(PlatformType.nostr.displayName, 'Nostr');
-      expect(PlatformType.nostr.characterLimit, 280);
+      expect(PlatformType.nostr.characterLimit, 800);
     });
 
     test('fromId should return correct platform', () {
