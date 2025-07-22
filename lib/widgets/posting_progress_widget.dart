@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../models/posting_progress.dart';
-import '../models/platform_type.dart';
 
 /// Widget that displays posting progress with platform-specific status
 class PostingProgressWidget extends StatelessWidget {
@@ -47,7 +46,7 @@ class PostingProgressWidget extends StatelessWidget {
             if (progress.overallProgress != null)
               LinearProgressIndicator(
                 value: progress.overallProgress,
-                backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+                backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
               ),
 
             const SizedBox(height: 16),

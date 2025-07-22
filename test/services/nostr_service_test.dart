@@ -1,9 +1,5 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 
 import 'package:yall/models/account.dart';
 import 'package:yall/models/platform_type.dart';
@@ -12,8 +8,6 @@ import 'package:yall/services/nostr_service.dart';
 import 'package:yall/services/social_platform_service.dart';
 
 // Mock classes for testing
-@GenerateMocks([WebSocketChannel, WebSocketSink, Stream])
-import 'nostr_service_test.mocks.dart';
 
 void main() {
   group('NostrService', () {

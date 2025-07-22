@@ -6,7 +6,6 @@ import '../models/account.dart';
 import '../models/post_result.dart';
 import '../models/platform_type.dart';
 import 'error_handler.dart';
-import 'retry_manager.dart';
 import 'social_platform_service.dart';
 
 /// Service for interacting with Bluesky via AT Protocol

@@ -64,7 +64,7 @@ class ThemeManager extends ChangeNotifier {
           borderRadius: BorderRadius.circular(8),
         ),
         filled: true,
-        fillColor: _lightColorScheme.surfaceVariant.withOpacity(0.3),
+        fillColor: _lightColorScheme.surfaceContainerHighest.withOpacity(0.3),
       ),
       checkboxTheme: CheckboxThemeData(
         shape: RoundedRectangleBorder(
@@ -105,7 +105,7 @@ class ThemeManager extends ChangeNotifier {
           borderRadius: BorderRadius.circular(8),
         ),
         filled: true,
-        fillColor: _darkColorScheme.surfaceVariant.withOpacity(0.3),
+        fillColor: _darkColorScheme.surfaceContainerHighest.withOpacity(0.3),
       ),
       checkboxTheme: CheckboxThemeData(
         shape: RoundedRectangleBorder(
@@ -135,11 +135,9 @@ class ThemeManager extends ChangeNotifier {
     errorContainer: Color(0xFFFFDAD6),
     onErrorContainer: Color(0xFF410002),
     outline: Color(0xFF79747E),
-    background: Color(0xFFFFFBFE),
-    onBackground: Color(0xFF1C1B1F),
     surface: Color(0xFFFFFBFE),
     onSurface: Color(0xFF1C1B1F),
-    surfaceVariant: Color(0xFFE7E0EC),
+    surfaceContainerHighest: Color(0xFFE7E0EC),
     onSurfaceVariant: Color(0xFF49454F),
     inverseSurface: Color(0xFF313033),
     onInverseSurface: Color(0xFFF4EFF4),
@@ -170,11 +168,9 @@ class ThemeManager extends ChangeNotifier {
     errorContainer: Color(0xFF93000A),
     onErrorContainer: Color(0xFFFFDAD6),
     outline: Color(0xFF938F99),
-    background: Color(0xFF1C1B1F),
-    onBackground: Color(0xFFE6E1E5),
     surface: Color(0xFF1C1B1F),
     onSurface: Color(0xFFE6E1E5),
-    surfaceVariant: Color(0xFF49454F),
+    surfaceContainerHighest: Color(0xFF49454F),
     onSurfaceVariant: Color(0xFFCAC4D0),
     inverseSurface: Color(0xFFE6E1E5),
     onInverseSurface: Color(0xFF313033),
