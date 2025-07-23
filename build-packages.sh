@@ -48,8 +48,16 @@ mkdir -p "$DEB_DIR/usr/share/applications"
 mkdir -p "$DEB_DIR/usr/share/pixmaps"
 mkdir -p "$DEB_DIR/usr/share/doc/yall"
 
-# Copy binary and dependencies
-cp -r "yall-$VERSION-linux-x64/"* "$DEB_DIR/usr/bin/"
+# Copy binary and dependencies to application directory
+mkdir -p "$DEB_DIR/usr/lib/yall"
+cp -r "yall-$VERSION-linux-x64/"* "$DEB_DIR/usr/lib/yall/"
+
+# Create wrapper script in /usr/bin
+cat > "$DEB_DIR/usr/bin/yall" << 'WRAPPER_EOF'
+#!/bin/bash
+exec /usr/lib/yall/yall "$@"
+WRAPPER_EOF
+chmod +x "$DEB_DIR/usr/bin/yall"
 
 # Create control file
 cat > "$DEB_DIR/DEBIAN/control" << EOF
@@ -147,9 +155,17 @@ Bluesky, and Mastodon with smart character limits and content truncation.
 %setup -q -n yall-%{version}-linux-x64
 
 %install
+mkdir -p %{buildroot}/usr/lib/yall
 mkdir -p %{buildroot}/usr/bin
 mkdir -p %{buildroot}/usr/share/applications
-cp -r * %{buildroot}/usr/bin/
+cp -r * %{buildroot}/usr/lib/yall/
+
+# Create wrapper script
+cat > %{buildroot}/usr/bin/yall << 'WRAPPER_EOF'
+#!/bin/bash
+exec /usr/lib/yall/yall "$@"
+WRAPPER_EOF
+chmod +x %{buildroot}/usr/bin/yall
 
 cat > %{buildroot}/usr/share/applications/yall.desktop << DESKTOP_EOF
 [Desktop Entry]
@@ -163,7 +179,8 @@ Categories=Network;
 DESKTOP_EOF
 
 %files
-/usr/bin/*
+/usr/lib/yall/*
+/usr/bin/yall
 /usr/share/applications/yall.desktop
 
 %changelog
