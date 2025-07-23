@@ -1,11 +1,11 @@
 Name:           yall
-Version:        1.0.0
+Version:        1.0.2
 Release:        1%{?dist}
 Summary:        Multi-platform social media poster
 
 License:        MIT
 URL:            https://github.com/timappledotcom/yall
-Source0:        yall-1.0.0.tar.gz
+Source0:        yall-1.0.2.tar.gz
 
 BuildArch:      x86_64
 Requires:       gtk3, glib2
