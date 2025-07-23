@@ -10,7 +10,7 @@ A Flutter-based cross-platform social media poster that lets you send messages t
 - **Smart Character Limits**: Platform-aware character limits with automatic truncation
   - Bluesky: 300 characters
   - Mastodon: 500 characters
-  - Nostr: Unlimited
+  - Nostr: 800 characters
 - **Truncation Warnings**: Real-time warnings showing which platforms will have content truncated
 - **Nostr Support**: Full BIP-340 Schnorr signatures with nsec-to-hex conversion
 - **Custom Relay Management**: Configure up to 10 custom Nostr relays
@@ -81,7 +81,7 @@ flutter build ios      # for iOS
 - **Character Limits**: Each platform has different limits that are automatically enforced:
   - **Bluesky**: 300 characters maximum
   - **Mastodon**: 500 characters maximum
-  - **Nostr**: No character limit
+  - **Nostr**: 800 characters maximum
 - **Smart Truncation**: Content automatically truncated per platform with "..." indicator
 - **Real-time Warnings**: Visual indicators show which platforms will receive truncated content
 - **Platform-specific Posting**: Each platform receives optimally sized content for its limits

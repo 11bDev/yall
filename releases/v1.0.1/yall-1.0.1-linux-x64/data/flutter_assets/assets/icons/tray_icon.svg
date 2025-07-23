@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <!-- Speech bubble background -->
+  <path d="M8 8 C8 4, 12 0, 16 0 L48 0 C52 0, 56 4, 56 8 L56 32 C56 36, 52 40, 48 40 L24 40 L8 56 L8 8 Z"
+        fill="#B8C5D6" stroke="none"/>
+
+  <!-- Y'all text -->
+  <text x="32" y="28" font-family="Arial, sans-serif" font-size="14" font-weight="bold"
+        text-anchor="middle" fill="#2D3748">Y'all</text>
+</svg>

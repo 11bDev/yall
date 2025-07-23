@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.1+1
+version: 1.0.2+1
 
 environment:
   sdk: ^3.8.1
@@ -49,18 +49,21 @@ dependencies:
 
   # Cryptography for Nostr key management
   crypto: ^3.0.5
-  pointycastle: ^3.9.1
+  pointycastle: ^4.0.0
   hex: ^0.2.0
 
   # System tray integration
   system_tray: ^2.0.3
 
   # Window management
-  window_manager: ^0.4.2
+  window_manager: ^0.5.1
 
   # UUID generation
   uuid: ^3.0.7
   bech32: ^0.2.2
+
+  # Package info for version details
+  package_info_plus: ^8.0.0
 
 dev_dependencies:
   flutter_test:
@@ -71,7 +74,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
 
   # Testing dependencies
   mockito: ^5.4.4

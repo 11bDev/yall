@@ -1,223 +1,157 @@
-# Yall 📱
+# yall
 
-> **Message to Nostr, Bluesky, and Mastodon from one place.**
+**Y**et **A**nother **L**ink **L**ogger - Message to Nostr, Bluesky, and Mastodon from one place.
 
-A Flutter-based cross-platform social media poster that lets you send messages to multiple social platforms simultaneously. Built with privacy and ease of use in mind.
+A cross-platform desktop application that allows you to post messages simultaneously to multiple social media platforms including Mastodon, Bluesky, and Nostr.
 
-## ✨ Features
+## Features
 
-- **Multi-Platform Posting**: Post to Nostr, Bluesky, and Mastodon from one interface
-- **Smart Character Limits**: Platform-aware character limits with automatic truncation
-  - Bluesky: 300 characters
-  - Mastodon: 500 characters
-  - Nostr: Unlimited
-- **Truncation Warnings**: Real-time warnings showing which platforms will have content truncated
-- **Nostr Support**: Full BIP-340 Schnorr signatures with nsec-to-hex conversion
-- **Custom Relay Management**: Configure up to 10 custom Nostr relays
-- **Cross-Platform**: Runs on Linux, Windows, macOS, Android, and iOS
-- **System Tray Integration**: Minimize to system tray with quick access
-- **Desktop Integration**: Proper app icons, dock/taskbar pinning, and desktop menu entries
-- **Secure Storage**: Credentials stored securely using platform-specific storage
-- **Dark/Light Themes**: Automatic theme switching based on system preferences
+- 🚀 **Multi-Platform Posting**: Post to Mastodon, Bluesky, and Nostr simultaneously
+- 🔒 **Secure Credential Storage**: Encrypted storage of account credentials
+- 🎨 **Modern UI**: Clean Material Design 3 interface with dark/light theme support
+- 💻 **Desktop Native**: System tray integration and window state management
+- ⌨️ **Keyboard Shortcuts**: Efficient workflow with keyboard navigation
+- 🔄 **Retry Logic**: Automatic retry for network failures
+- 🛡️ **Error Handling**: Comprehensive error handling with user-friendly messages
+- ♿ **Accessibility**: Full accessibility support with semantic labels and tooltips
 
-## 🚀 Installation
+## Keyboard Shortcuts
 
-### Linux
-
-1. **Build from source:**
-   ```bash
-   git clone https://github.com/timappledotcom/yall.git
-   cd yall
-   flutter build linux
-   ```
-
-2. **Install system-wide:**
-   ```bash
-   ./install-linux.sh
-   ```
-
-3. **Find Yall in your applications menu** or run from terminal:
-   ```bash
-   yall
-   ```
-
-### Windows
-
-1. **Build from source:**
-   ```cmd
-   git clone https://github.com/timappledotcom/yall.git
-   cd yall
-   flutter build windows
-   ```
-
-2. **Install:**
-   ```cmd
-   install-windows.bat
-   ```
-
-3. **Find Yall in Start Menu** or use the Desktop shortcut
-
-### macOS, Android, iOS
-
-Flutter support is available for these platforms. Build instructions:
-
-```bash
-flutter build macos    # for macOS
-flutter build apk      # for Android
-flutter build ios      # for iOS
-```
-
-## 📋 Prerequisites
-
-- **Flutter SDK**: Version 3.8.1 or higher
-- **Platform-specific requirements**:
-  - Linux: GTK3 development headers
-  - Windows: Visual Studio with C++ support
-  - macOS: Xcode
-
-## 🔧 Configuration
-
-### Content Management
-- **Character Limits**: Each platform has different limits that are automatically enforced:
-  - **Bluesky**: 300 characters maximum
-  - **Mastodon**: 500 characters maximum
-  - **Nostr**: No character limit
-- **Smart Truncation**: Content automatically truncated per platform with "..." indicator
-- **Real-time Warnings**: Visual indicators show which platforms will receive truncated content
-- **Platform-specific Posting**: Each platform receives optimally sized content for its limits
-
-### Nostr Setup
-1. Open Settings → Accounts → Add Nostr Account
-2. **Option 1**: Paste your nsec private key (recommended)
-   - The app automatically converts nsec to hex format
-3. **Option 2**: Enter hex private key directly
-4. **Relay Configuration**: Settings → Nostr → Manage up to 10 relays
-
-### Bluesky Setup
-1. Generate an App Password at [bsky.app](https://bsky.app)
-2. Add Bluesky Account with your handle and app password
-
-### Mastodon Setup
-1. Create application in your Mastodon instance
-2. Get access token and server URL
-3. Add Mastodon Account with these credentials
-
-## ⌨️ Keyboard Shortcuts
-
-- `Ctrl+N` / `Cmd+N`: New post
-- `Ctrl+Enter` / `Cmd+Enter`: Submit post
-- `Ctrl+,` / `Cmd+,`: Open settings
-- `Escape`: Cancel/close
+- `Ctrl+N`: Focus on new post input
+- `Ctrl+Enter`: Submit post
+- `Ctrl+,`: Open settings
+- `Escape`: Cancel current operation
 - `F1`: Show help
 
-## 🏗️ Architecture
+## Installation
 
-### Key Components
+### Prerequisites
 
-- **Services Layer**: Platform-specific integrations (NostrService, BlueskyService, MastodonService)
-- **Providers**: State management using Flutter Provider pattern
-- **Cryptography**: BIP-340 Schnorr signatures for Nostr using PointyCastle
-- **Storage**: Secure credential storage with flutter_secure_storage
-- **UI**: Material Design 3 with responsive layout
+- Flutter 3.8.1 or higher
+- Linux desktop environment (primary target)
+- Network connection for platform APIs
 
-### Security Features
+### Building from Source
 
-- **Local Storage**: All credentials stored locally using platform keychain
-- **No Cloud Sync**: Data never leaves your device
-- **Secure Key Conversion**: nsec keys converted to hex locally
-- **Memory Safety**: Sensitive data cleared from memory when possible
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/timappledotcom/yall.git
+   cd yall
+   ```
 
-## 🛠️ Development
+2. Install dependencies:
+   ```bash
+   flutter pub get
+   ```
 
-### Building
+3. Run the application:
+   ```bash
+   flutter run -d linux
+   ```
 
-```bash
-# Get dependencies
-flutter pub get
+4. Build for production:
+   ```bash
+   flutter build linux --release
+   ```
 
-# Run in development
-flutter run -d linux    # or windows, macos
+## Platform Setup
 
-# Build release
-flutter build linux
-flutter build windows
-flutter build macos
+### Mastodon
+1. Go to your Mastodon instance settings
+2. Navigate to Development > New Application
+3. Create an application with read/write permissions
+4. Copy the access token to the app settings
+
+### Bluesky
+1. Use your Bluesky handle (e.g., `user.bsky.social`)
+2. Generate an app password in Bluesky settings
+3. Use your handle and app password in the app settings
+
+### Nostr
+1. Generate a new key pair in the app
+2. Or import an existing private key (hex format)
+3. Configure relay servers for message distribution
+
+## Development
+
+### Project Structure
+
+```
+lib/
+├── models/          # Data models and enums
+├── providers/       # State management (Provider pattern)
+├── services/        # Business logic and API integrations
+├── widgets/         # UI components
+└── main.dart        # Application entry point
+
+test/
+├── integration/     # Integration tests
+├── models/         # Model unit tests
+├── providers/      # Provider unit tests
+├── services/       # Service unit tests
+└── widgets/        # Widget tests
 ```
 
-### Testing
+### Running Tests
 
 ```bash
-# Run unit tests
+# Unit and widget tests
 flutter test
 
-# Run integration tests
+# Integration tests
 flutter test integration_test/
+
+# Test coverage
+flutter test --coverage
 ```
 
-## 📦 Dependencies
-
-### Core
-- `flutter`: Framework
-- `provider`: State management
-- `window_manager`: Desktop window controls
-
-### Networking & Crypto
-- `http`: HTTP client
-- `web_socket_channel`: WebSocket for Nostr
-- `pointycastle`: Cryptography
-- `bech32`: nsec key decoding
-
-### Storage & UI
-- `flutter_secure_storage`: Secure credential storage
-- `system_tray`: System tray integration
-- `flutter_launcher_icons`: Cross-platform app icons
-
-## 🤝 Contributing
+### Contributing
 
 1. Fork the repository
 2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+3. Write tests for new features
+4. Ensure all tests pass
+5. Submit a pull request
 
-## 📄 License
+## Architecture
 
-This project is open source. See LICENSE file for details.
+The application follows a clean architecture pattern with:
 
-## 🐛 Troubleshooting
+- **Models**: Data structures and business entities
+- **Services**: Platform integrations and business logic
+- **Providers**: State management using Flutter's Provider pattern
+- **Widgets**: UI components and screens
 
-### Linux Issues
-- **Icon not showing**: Ensure `~/.local/share/icons/` is in icon theme path
-- **System tray missing**: Install `libayatana-appindicator3-dev`
+Key design principles:
+- Dependency injection for testability
+- Abstract interfaces for platform services
+- Immutable data models
+- Comprehensive error handling
+- Secure credential management
 
-### Windows Issues
-- **Build fails**: Ensure Visual Studio Build Tools are installed
-- **DLL missing**: Redistribute Visual C++ Runtime may be needed
+## Privacy & Security
 
-### General Issues
-- **Flutter not found**: Ensure Flutter SDK is in PATH
-- **Build errors**: Run `flutter clean && flutter pub get`
+- All credentials are encrypted using platform-secure storage
+- No sensitive data is logged or transmitted
+- Network requests use HTTPS/WSS where supported
+- Local data is stored securely using flutter_secure_storage
 
-## 🔗 Links
+## License
 
-- **Source**: [GitHub Repository](https://github.com/timappledotcom/yall)
-- **Nostr**: [NIP Specifications](https://github.com/nostr-protocol/nips)
-- **Bluesky**: [AT Protocol](https://atproto.com)
-- **Mastodon**: [API Documentation](https://docs.joinmastodon.org/api/)
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
----
+## Support
 
-**Built with ❤️ using Flutter**
+For issues, feature requests, or questions:
+1. Check existing [GitHub Issues](https://github.com/timappledotcom/yall/issues)
+2. Create a new issue with detailed information
+3. Include platform and version information
 
-## Getting Started
+## Roadmap
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- [ ] Post scheduling
+- [ ] Draft management
+- [ ] Bulk account operations
+- [ ] Analytics dashboard
+- [ ] Plugin system for additional platforms
+- [ ] Mobile companion app

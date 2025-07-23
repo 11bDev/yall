@@ -1,0 +1,4 @@
+# Windows ICO format placeholder
+# In a real implementation, this would be a proper ICO file
+# converted from the SVG source with multiple resolutions:
+# 16x16, 24x24, 32x32, 48x48, 64x64, 128x128, 256x256

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'settings/account_settings_tab.dart';
 import 'settings/theme_settings_tab.dart';
 import 'settings/nostr_settings_tab.dart';
+import 'settings/about_settings_tab.dart';
 
 /// Settings window with tabbed interface for managing application preferences
 class SettingsWindow extends StatefulWidget {
@@ -20,7 +21,7 @@ class _SettingsWindowState extends State<SettingsWindow>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -102,6 +103,7 @@ class _SettingsWindowState extends State<SettingsWindow>
               Tab(icon: Icon(Icons.account_circle), text: 'Accounts'),
               Tab(icon: Icon(Icons.palette), text: 'Appearance'),
               Tab(icon: Icon(Icons.electrical_services), text: 'Nostr'),
+              Tab(icon: Icon(Icons.info_outline), text: 'About'),
             ],
           ),
           actions: [
@@ -152,6 +154,7 @@ class _SettingsWindowState extends State<SettingsWindow>
               onChanged: _markUnsavedChanges,
               onSaved: _markChangesSaved,
             ),
+            const AboutSettingsTab(),
           ],
         ),
       ),
