@@ -5,6 +5,7 @@ import 'dart:math';
 import '../models/account.dart';
 import '../models/platform_type.dart';
 import '../models/post_result.dart';
+import '../models/post_data.dart';
 import 'error_handler.dart';
 import 'social_platform_service.dart';
 
@@ -338,6 +339,19 @@ extension SocialPlatformServiceRetry on SocialPlatformService {
     return retryManager.executePostWithRetry(
       platformName,
       () => publishPost(content, account),
+      platform: platformType,
+    );
+  }
+
+  /// Publish post with media with retry logic
+  Future<PostResult> publishPostWithMediaRetry(
+    PostData postData,
+    Account account,
+  ) async {
+    final retryManager = RetryManager();
+    return retryManager.executePostWithRetry(
+      platformName,
+      () => publishPostWithMedia(postData, account),
       platform: platformType,
     );
   }

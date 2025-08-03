@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/secure_storage_service.dart';
 import '../models/app_settings.dart';
+import '../design_system/ubuntu_constants.dart';
 
 /// Exception thrown when theme operations fail
 class ThemeException implements Exception {
@@ -22,7 +23,7 @@ class ThemeManager extends ChangeNotifier {
   bool _isInitialized = false;
 
   ThemeManager({SecureStorageService? storageService})
-      : _storageService = storageService ?? SecureStorageService();
+    : _storageService = storageService ?? SecureStorageService();
 
   /// Current application settings
   AppSettings get settings => _settings;
@@ -33,153 +34,101 @@ class ThemeManager extends ChangeNotifier {
   /// Whether the theme manager has been initialized
   bool get isInitialized => _isInitialized;
 
-  /// Light theme data with custom Material Design 3 color scheme
+  /// Light theme data with Material Design 3
   ThemeData get lightTheme {
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.light,
-      colorScheme: _lightColorScheme,
-      appBarTheme: AppBarTheme(
-        backgroundColor: _lightColorScheme.surface,
-        foregroundColor: _lightColorScheme.onSurface,
-        elevation: 0,
+    return ThemeData.light().copyWith(
+      textTheme: ThemeData.light().textTheme.apply(fontFamily: 'Ubuntu'),
+      appBarTheme: ThemeData.light().appBarTheme.copyWith(
+        elevation: UbuntuElevation.none,
         centerTitle: true,
+        backgroundColor: ThemeData.light().colorScheme.surface,
+        foregroundColor: ThemeData.light().colorScheme.onSurface,
       ),
-      cardTheme: CardThemeData(
-        elevation: 2,
+      cardTheme: ThemeData.light().cardTheme.copyWith(
+        elevation: UbuntuElevation.low,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(UbuntuRadius.lg),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(UbuntuRadius.md),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          padding: const EdgeInsets.symmetric(
+            horizontal: UbuntuSpacing.lg,
+            vertical: UbuntuSpacing.sm,
+          ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(UbuntuRadius.md),
         ),
         filled: true,
-        fillColor: _lightColorScheme.surfaceContainerHighest.withOpacity(0.3),
+        fillColor: ThemeData.light().colorScheme.surfaceContainerHighest.withOpacity(
+          0.3,
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: UbuntuSpacing.md,
+          vertical: UbuntuSpacing.sm,
+        ),
       ),
       checkboxTheme: CheckboxThemeData(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(UbuntuRadius.sm),
         ),
       ),
     );
   }
 
-  /// Dark theme data with custom Material Design 3 color scheme
+  /// Dark theme data with Material Design 3  
   ThemeData get darkTheme {
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.dark,
-      colorScheme: _darkColorScheme,
-      appBarTheme: AppBarTheme(
-        backgroundColor: _darkColorScheme.surface,
-        foregroundColor: _darkColorScheme.onSurface,
-        elevation: 0,
+    return ThemeData.dark().copyWith(
+      textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'Ubuntu'),
+      appBarTheme: ThemeData.dark().appBarTheme.copyWith(
+        elevation: UbuntuElevation.none,
         centerTitle: true,
+        backgroundColor: ThemeData.dark().colorScheme.surface,
+        foregroundColor: ThemeData.dark().colorScheme.onSurface,
       ),
-      cardTheme: CardThemeData(
-        elevation: 2,
+      cardTheme: ThemeData.dark().cardTheme.copyWith(
+        elevation: UbuntuElevation.low,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(UbuntuRadius.lg),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(UbuntuRadius.md),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          padding: const EdgeInsets.symmetric(
+            horizontal: UbuntuSpacing.lg,
+            vertical: UbuntuSpacing.sm,
+          ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(UbuntuRadius.md),
         ),
         filled: true,
-        fillColor: _darkColorScheme.surfaceContainerHighest.withOpacity(0.3),
+        fillColor: ThemeData.dark().colorScheme.surfaceContainerHighest.withOpacity(
+          0.3,
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: UbuntuSpacing.md,
+          vertical: UbuntuSpacing.sm,
+        ),
       ),
       checkboxTheme: CheckboxThemeData(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(UbuntuRadius.sm),
         ),
       ),
     );
   }
-
-  /// Custom light color scheme based on Material Design 3
-  static const ColorScheme _lightColorScheme = ColorScheme(
-    brightness: Brightness.light,
-    primary: Color(0xFF6750A4),
-    onPrimary: Color(0xFFFFFFFF),
-    primaryContainer: Color(0xFFEADDFF),
-    onPrimaryContainer: Color(0xFF21005D),
-    secondary: Color(0xFF625B71),
-    onSecondary: Color(0xFFFFFFFF),
-    secondaryContainer: Color(0xFFE8DEF8),
-    onSecondaryContainer: Color(0xFF1D192B),
-    tertiary: Color(0xFF7D5260),
-    onTertiary: Color(0xFFFFFFFF),
-    tertiaryContainer: Color(0xFFFFD8E4),
-    onTertiaryContainer: Color(0xFF31111D),
-    error: Color(0xFFBA1A1A),
-    onError: Color(0xFFFFFFFF),
-    errorContainer: Color(0xFFFFDAD6),
-    onErrorContainer: Color(0xFF410002),
-    outline: Color(0xFF79747E),
-    surface: Color(0xFFFFFBFE),
-    onSurface: Color(0xFF1C1B1F),
-    surfaceContainerHighest: Color(0xFFE7E0EC),
-    onSurfaceVariant: Color(0xFF49454F),
-    inverseSurface: Color(0xFF313033),
-    onInverseSurface: Color(0xFFF4EFF4),
-    inversePrimary: Color(0xFFD0BCFF),
-    shadow: Color(0xFF000000),
-    surfaceTint: Color(0xFF6750A4),
-    outlineVariant: Color(0xFFCAC4D0),
-    scrim: Color(0xFF000000),
-  );
-
-  /// Custom dark color scheme based on Material Design 3
-  static const ColorScheme _darkColorScheme = ColorScheme(
-    brightness: Brightness.dark,
-    primary: Color(0xFFD0BCFF),
-    onPrimary: Color(0xFF381E72),
-    primaryContainer: Color(0xFF4F378B),
-    onPrimaryContainer: Color(0xFFEADDFF),
-    secondary: Color(0xFFCCC2DC),
-    onSecondary: Color(0xFF332D41),
-    secondaryContainer: Color(0xFF4A4458),
-    onSecondaryContainer: Color(0xFFE8DEF8),
-    tertiary: Color(0xFFEFB8C8),
-    onTertiary: Color(0xFF492532),
-    tertiaryContainer: Color(0xFF633B48),
-    onTertiaryContainer: Color(0xFFFFD8E4),
-    error: Color(0xFFFFB4AB),
-    onError: Color(0xFF690005),
-    errorContainer: Color(0xFF93000A),
-    onErrorContainer: Color(0xFFFFDAD6),
-    outline: Color(0xFF938F99),
-    surface: Color(0xFF1C1B1F),
-    onSurface: Color(0xFFE6E1E5),
-    surfaceContainerHighest: Color(0xFF49454F),
-    onSurfaceVariant: Color(0xFFCAC4D0),
-    inverseSurface: Color(0xFFE6E1E5),
-    onInverseSurface: Color(0xFF313033),
-    inversePrimary: Color(0xFF6750A4),
-    shadow: Color(0xFF000000),
-    surfaceTint: Color(0xFFD0BCFF),
-    outlineVariant: Color(0xFF49454F),
-    scrim: Color(0xFF000000),
-  );
 
   /// Initialize the theme manager by loading saved settings
   Future<void> initialize() async {
@@ -217,6 +166,30 @@ class ThemeManager extends ChangeNotifier {
         ? ThemeMode.dark
         : ThemeMode.light;
     await setThemeMode(newMode);
+  }
+
+  /// Update the close to tray setting
+  Future<void> setCloseToTray(bool closeToTray) async {
+    try {
+      final newSettings = _settings.copyWith(closeToTray: closeToTray);
+      await _saveSettings(newSettings);
+      _settings = newSettings;
+      notifyListeners();
+    } catch (e) {
+      throw ThemeException('Failed to set close to tray setting', e);
+    }
+  }
+
+  /// Update the minimize to tray setting
+  Future<void> setMinimizeToTray(bool minimizeToTray) async {
+    try {
+      final newSettings = _settings.copyWith(minimizeToTray: minimizeToTray);
+      await _saveSettings(newSettings);
+      _settings = newSettings;
+      notifyListeners();
+    } catch (e) {
+      throw ThemeException('Failed to set minimize to tray setting', e);
+    }
   }
 
   /// Update application settings and persist changes

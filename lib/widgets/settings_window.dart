@@ -102,7 +102,7 @@ class _SettingsWindowState extends State<SettingsWindow>
             tabs: const [
               Tab(icon: Icon(Icons.account_circle), text: 'Accounts'),
               Tab(icon: Icon(Icons.palette), text: 'Appearance'),
-              Tab(icon: Icon(Icons.electrical_services), text: 'Nostr'),
+              Tab(icon: Icon(Icons.settings_ethernet), text: 'Nostr'),
               Tab(icon: Icon(Icons.info_outline), text: 'About'),
             ],
           ),

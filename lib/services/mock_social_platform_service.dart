@@ -47,6 +47,8 @@ class MockSocialPlatformService extends SocialPlatformService {
         return ['handle', 'app_password'];
       case PlatformType.nostr:
         return ['private_key'];
+      case PlatformType.microblog:
+        return ['username', 'token'];
     }
   }
 
@@ -174,6 +176,10 @@ class MockSocialPlatformService extends SocialPlatformService {
       case PlatformType.nostr:
         final privateKey = account.getCredential<String>('private_key');
         return privateKey != null && privateKey.length >= 32;
+      case PlatformType.microblog:
+        final username = account.getCredential<String>('username');
+        final token = account.getCredential<String>('token');
+        return username != null && token != null;
     }
   }
 }

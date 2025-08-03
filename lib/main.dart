@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +12,7 @@ import 'providers/theme_manager.dart';
 import 'services/error_handler.dart';
 import 'services/system_tray_manager.dart';
 import 'services/window_state_manager.dart';
+import 'services/floating_window_manager.dart';
 import 'widgets/posting_widget.dart';
 import 'widgets/settings_window.dart';
 
@@ -46,18 +48,26 @@ void main() async {
   if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
     await windowManager.ensureInitialized();
 
-    // Set window options
+    // Set window options for floating window (optimized for COSMIC)
     WindowOptions windowOptions = const WindowOptions(
-      size: Size(800, 600),
+      size: Size(600, 500), // Smaller size that COSMIC is less likely to tile
       minimumSize: Size(400, 300),
+      maximumSize: Size(800, 700), // Constrain maximum size
       center: true,
       backgroundColor: Colors.transparent,
       skipTaskbar: false,
       titleBarStyle: TitleBarStyle.normal,
       windowButtonVisibility: true,
+      alwaysOnTop: false,
     );
 
     await windowManager.waitUntilReadyToShow(windowOptions, () async {
+      // Configure window to be floating/non-tiling
+      await FloatingWindowManager.configureFloatingWindow();
+
+      // Print helpful configuration instructions for tiling WMs
+      FloatingWindowManager.printWMConfigInstructions();
+
       await windowManager.show();
       await windowManager.focus();
 
@@ -153,10 +163,46 @@ class _MainWindowState extends State<MainWindow> {
 
     try {
       await windowStateManager.initialize();
+
+      // Ensure floating behavior is maintained
+      await _maintainFloatingBehavior();
+
       debugPrint('Window state manager initialized successfully');
     } catch (e) {
       debugPrint('Failed to initialize window state manager: $e');
       // Continue without window state persistence if initialization fails
+    }
+  }
+
+  /// Maintain floating window behavior throughout the app lifecycle
+  Future<void> _maintainFloatingBehavior() async {
+    if (!Platform.isLinux && !Platform.isWindows && !Platform.isMacOS) {
+      return;
+    }
+
+    try {
+      // Re-apply floating window configuration
+      await FloatingWindowManager.configureFloatingWindow();
+
+      // Set up a periodic check to maintain floating behavior
+      // This helps in case the window manager tries to tile the window
+      Timer.periodic(const Duration(seconds: 5), (timer) async {
+        if (!mounted) {
+          timer.cancel();
+          return;
+        }
+
+        try {
+          final isVisible = await windowManager.isVisible();
+          if (isVisible) {
+            await FloatingWindowManager.maintainFloatingBehavior();
+          }
+        } catch (e) {
+          // Ignore errors in periodic check
+        }
+      });
+    } catch (e) {
+      debugPrint('Failed to maintain floating behavior: $e');
     }
   }
 

@@ -1,6 +1,7 @@
 import '../models/account.dart';
 import '../models/post_result.dart';
 import '../models/platform_type.dart';
+import '../models/post_data.dart';
 
 /// Exception thrown by social platform services
 class SocialPlatformException implements Exception {
@@ -45,6 +46,29 @@ abstract class SocialPlatformService {
   /// Returns a [PostResult] indicating success or failure for this platform.
   /// The result will contain error information if the post fails.
   Future<PostResult> publishPost(String content, Account account);
+
+  /// Publish a post with media to the platform
+  ///
+  /// Returns a [PostResult] indicating success or failure for this platform.
+  /// The result will contain error information if the post fails.
+  /// 
+  /// Default implementation falls back to text-only posting.
+  Future<PostResult> publishPostWithMedia(PostData postData, Account account) async {
+    // Default implementation: just post the text content
+    return publishPost(postData.content, account);
+  }
+
+  /// Check if this platform supports media uploads
+  bool get supportsMediaUploads => false;
+
+  /// Get maximum number of media attachments allowed per post
+  int get maxMediaAttachments => 0;
+
+  /// Get maximum file size for media uploads (in bytes)
+  int get maxMediaFileSize => 0;
+
+  /// Get supported media types for this platform
+  List<String> get supportedMediaTypes => [];
 
   /// Validate that an account's connection to the platform is still valid
   ///

@@ -5,10 +5,15 @@ import 'package:provider/provider.dart';
 import '../models/platform_type.dart';
 import '../models/account.dart';
 import '../models/posting_progress.dart';
+import '../models/post_data.dart';
+import '../models/media_attachment.dart';
 import '../providers/post_manager.dart';
 import '../providers/account_manager.dart';
+import '../services/image_service.dart';
+import '../design_system/ubuntu_constants.dart';
 import 'platform_selector.dart';
 import 'posting_progress_widget.dart';
+import 'media_attachment_widget.dart';
 
 /// Main widget for composing and posting messages to multiple platforms
 class PostingWidget extends StatefulWidget {
@@ -23,6 +28,8 @@ class _PostingWidgetState extends State<PostingWidget> {
   final Set<PlatformType> _selectedPlatforms = <PlatformType>{};
   final Map<PlatformType, Account?> _selectedAccounts =
       <PlatformType, Account?>{};
+  final List<MediaAttachment> _mediaAttachments = [];
+  final ImageService _imageService = ImageService();
 
   @override
   void initState() {
@@ -66,11 +73,51 @@ class _PostingWidgetState extends State<PostingWidget> {
     });
   }
 
+  Future<void> _onAddImagesPressed() async {
+    try {
+      final attachments = await _imageService.pickImages(
+        allowMultiple: true,
+        maxFiles: 4 - _mediaAttachments.length, // Limit total attachments
+      );
+
+      if (attachments.isNotEmpty) {
+        setState(() {
+          _mediaAttachments.addAll(attachments);
+        });
+      }
+    } catch (e) {
+      _showErrorDialog('Failed to add images: ${e.toString()}');
+    }
+  }
+
+  void _onRemoveMedia(MediaAttachment attachment) {
+    setState(() {
+      _mediaAttachments.remove(attachment);
+    });
+  }
+
+  void _onUpdateMediaDescription(MediaAttachment updatedAttachment) {
+    setState(() {
+      final index = _mediaAttachments.indexWhere(
+        (a) => a.id == updatedAttachment.id,
+      );
+      if (index != -1) {
+        _mediaAttachments[index] = updatedAttachment;
+      }
+    });
+  }
+
   Future<void> _onPostPressed() async {
     final postManager = context.read<PostManager>();
     final content = _textController.text.trim();
 
-    if (content.isEmpty || _selectedPlatforms.isEmpty) {
+    // Create post data
+    final postData = PostData(
+      content: content,
+      mediaAttachments: _mediaAttachments,
+    );
+
+    if (!postData.isValid || _selectedPlatforms.isEmpty) {
       return;
     }
 
@@ -87,13 +134,17 @@ class _PostingWidgetState extends State<PostingWidget> {
 
     try {
       final result = await postManager.publishToSelectedPlatforms(
-        content,
+        postData,
         validPlatforms,
         validAccounts,
       );
 
       if (result.allSuccessful) {
-        // Clear the text field on successful post
+        // Clear the text field and media on successful post
+        _textController.clear();
+        setState(() {
+          _mediaAttachments.clear();
+        });
         _textController.clear();
         _showSuccessMessage();
       } else {
@@ -165,14 +216,20 @@ class _PostingWidgetState extends State<PostingWidget> {
     return Consumer2<PostManager, AccountManager>(
       builder: (context, postManager, accountManager, child) {
         final content = _textController.text;
+        final postData = PostData(
+          content: content,
+          mediaAttachments: _mediaAttachments,
+        );
         final canPost =
-            postManager.canPost(content, _selectedPlatforms) &&
+            postData.isValid &&
+            _selectedPlatforms.isNotEmpty &&
             _selectedPlatforms.every(
               (platform) => _selectedAccounts[platform] != null,
-            );
+            ) &&
+            !postManager.isPosting;
 
         return Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(UbuntuSpacing.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
@@ -180,7 +237,7 @@ class _PostingWidgetState extends State<PostingWidget> {
               // Text input area
               Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(UbuntuSpacing.md),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -192,12 +249,54 @@ class _PostingWidgetState extends State<PostingWidget> {
                           border: InputBorder.none,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: UbuntuSpacing.sm),
+
+                      // Media attachment buttons
+                      Row(
+                        children: [
+                          IconButton(
+                            onPressed:
+                                !postManager.isPosting &&
+                                    _mediaAttachments.length < 4
+                                ? _onAddImagesPressed
+                                : null,
+                            icon: const Icon(Icons.image),
+                            tooltip: 'Add images',
+                          ),
+                          if (_mediaAttachments.isNotEmpty) ...[
+                            const SizedBox(width: UbuntuSpacing.sm),
+                            Text(
+                              '${_mediaAttachments.length} attachment${_mediaAttachments.length == 1 ? '' : 's'}',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                                  ),
+                            ),
+                          ],
+                          const Spacer(),
+                        ],
+                      ),
+
                       _buildCharacterCounter(postManager),
                     ],
                   ),
                 ),
               ),
+
+              // Media attachments
+              if (_mediaAttachments.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                MediaAttachmentGrid(
+                  attachments: _mediaAttachments,
+                  onRemove: !postManager.isPosting ? _onRemoveMedia : null,
+                  onDescriptionChanged: !postManager.isPosting
+                      ? _onUpdateMediaDescription
+                      : null,
+                  isEditable: !postManager.isPosting,
+                ),
+              ],
 
               const SizedBox(height: 16),
 
@@ -216,9 +315,7 @@ class _PostingWidgetState extends State<PostingWidget> {
               SizedBox(
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: canPost && !postManager.isPosting
-                      ? _onPostPressed
-                      : null,
+                  onPressed: canPost ? _onPostPressed : null,
                   child: postManager.isPosting
                       ? const SizedBox(
                           width: 20,
@@ -312,9 +409,21 @@ class _PostingWidgetState extends State<PostingWidget> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Content length: $contentLength characters',
-              style: Theme.of(context).textTheme.bodySmall,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Content length: $contentLength characters',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                if (_mediaAttachments.isNotEmpty)
+                  Text(
+                    'Media: ${PostData(content: content, mediaAttachments: _mediaAttachments).formattedTotalMediaSize}',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+              ],
             ),
             if (_selectedPlatforms.isNotEmpty)
               _buildLimitsSummary(limits, contentLength),

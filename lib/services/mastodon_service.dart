@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import '../models/account.dart';
 import '../models/post_result.dart';
 import '../models/platform_type.dart';
+import '../models/post_data.dart';
+import '../models/media_attachment.dart';
 import 'error_handler.dart';
 import 'social_platform_service.dart';
 
@@ -21,6 +23,25 @@ class MastodonService extends SocialPlatformService {
 
   @override
   List<String> get requiredCredentialFields => ['instance_url', 'access_token'];
+
+  @override
+  bool get supportsMediaUploads => true;
+
+  @override
+  int get maxMediaAttachments => 4;
+
+  @override
+  int get maxMediaFileSize => 40 * 1024 * 1024; // 40MB
+
+  @override
+  List<String> get supportedMediaTypes => [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'video/mp4',
+    'video/webm',
+  ];
 
   /// Optional credential fields that may be present
   static const List<String> optionalCredentialFields = [
@@ -343,6 +364,128 @@ class MastodonService extends SocialPlatformService {
         platform: platformType,
       );
       return result;
+    }
+  }
+
+  @override
+  Future<PostResult> publishPostWithMedia(PostData postData, Account account) async {
+    try {
+      // Validate content length
+      if (!isContentValid(postData.content)) {
+        final result = createFailureResult(
+          postData.content,
+          'Content exceeds character limit of $characterLimit',
+          PostErrorType.contentTooLong,
+        );
+        return result;
+      }
+
+      // Validate credentials
+      if (!hasRequiredCredentials(account)) {
+        final result = createFailureResult(
+          postData.content,
+          'Missing required credentials: ${requiredCredentialFields.join(', ')}',
+          PostErrorType.invalidCredentials,
+        );
+        return result;
+      }
+
+      // Validate media attachments
+      if (postData.mediaAttachments.length > maxMediaAttachments) {
+        final result = createFailureResult(
+          postData.content,
+          'Too many media attachments (max: $maxMediaAttachments)',
+          PostErrorType.contentTooLong,
+        );
+        return result;
+      }
+
+      final instanceUrl = account.getCredential<String>('instance_url')!;
+      final accessToken = account.getCredential<String>('access_token')!;
+
+      // Upload media attachments first
+      final mediaIds = <String>[];
+      for (final attachment in postData.mediaAttachments) {
+        try {
+          final mediaId = await _uploadMedia(instanceUrl, accessToken, attachment);
+          if (mediaId != null) {
+            mediaIds.add(mediaId);
+          }
+        } catch (e) {
+          final result = createFailureResult(
+            postData.content,
+            'Failed to upload media: ${e.toString()}',
+            PostErrorType.unknownError,
+          );
+          return result;
+        }
+      }
+
+      // Prepare the status data with media
+      final statusData = {
+        'status': postData.content,
+        'visibility': 'public',
+        if (mediaIds.isNotEmpty) 'media_ids': mediaIds,
+      };
+
+      // Post the status
+      final response = await _httpClient.post(
+        Uri.parse('$instanceUrl/api/v1/statuses'),
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(statusData),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return createSuccessResult(postData.content);
+      } else {
+        final result = createFailureResult(
+          postData.content,
+          'Post failed with status ${response.statusCode}',
+          PostErrorType.unknownError,
+        );
+        return result;
+      }
+    } catch (e) {
+      return handleError(postData.content, e);
+    }
+  }
+
+  /// Upload a media attachment to Mastodon
+  Future<String?> _uploadMedia(String instanceUrl, String accessToken, MediaAttachment attachment) async {
+    try {
+      final bytes = await attachment.getBytes();
+      
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$instanceUrl/api/v2/media'),
+      );
+      
+      request.headers['Authorization'] = 'Bearer $accessToken';
+      
+      request.files.add(http.MultipartFile.fromBytes(
+        'file',
+        bytes,
+        filename: attachment.fileName,
+      ));
+      
+      if (attachment.description != null && attachment.description!.isNotEmpty) {
+        request.fields['description'] = attachment.description!;
+      }
+      
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      
+      if (response.statusCode == 200 || response.statusCode == 202) {
+        final responseData = jsonDecode(response.body) as Map<String, dynamic>;
+        return responseData['id'] as String?;
+      } else {
+        throw Exception('Media upload failed with status ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Failed to upload media: ${e.toString()}');
     }
   }
 

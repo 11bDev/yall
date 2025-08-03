@@ -9,11 +9,7 @@ class ThemeSettingsTab extends StatefulWidget {
   final VoidCallback? onChanged;
   final VoidCallback? onSaved;
 
-  const ThemeSettingsTab({
-    super.key,
-    this.onChanged,
-    this.onSaved,
-  });
+  const ThemeSettingsTab({super.key, this.onChanged, this.onSaved});
 
   @override
   State<ThemeSettingsTab> createState() => _ThemeSettingsTabState();
@@ -41,9 +37,7 @@ class _ThemeSettingsTabState extends State<ThemeSettingsTab> {
     return Consumer<ThemeManager>(
       builder: (context, themeManager, child) {
         if (_isLoading) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
+          return const Center(child: CircularProgressIndicator());
         }
 
         if (_error != null) {
@@ -113,7 +107,9 @@ class _ThemeSettingsTabState extends State<ThemeSettingsTab> {
         Text(
           'Customize the look and behavior of the application.',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.6),
           ),
         ),
       ],
@@ -134,17 +130,16 @@ class _ThemeSettingsTabState extends State<ThemeSettingsTab> {
                   color: Theme.of(context).colorScheme.primary,
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  'Theme',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+                Text('Theme', style: Theme.of(context).textTheme.titleMedium),
               ],
             ),
             const SizedBox(height: 16),
             Text(
               'Choose your preferred theme mode',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.6),
               ),
             ),
             const SizedBox(height: 16),
@@ -190,7 +185,9 @@ class _ThemeSettingsTabState extends State<ThemeSettingsTab> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        color: Theme.of(
+          context,
+        ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
@@ -202,7 +199,9 @@ class _ThemeSettingsTabState extends State<ThemeSettingsTab> {
           Text(
             'Preview',
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
           const SizedBox(height: 8),
@@ -301,20 +300,30 @@ class _ThemeSettingsTabState extends State<ThemeSettingsTab> {
             const SizedBox(height: 16),
             SwitchListTile(
               title: const Text('Minimize to System Tray'),
-              subtitle: const Text('Hide to system tray when window is closed'),
-              value: _tempSettings.minimizeToTray,
-              onChanged: (value) => _updateSetting(
-                _tempSettings.copyWith(minimizeToTray: value),
+              subtitle: const Text(
+                'Allow application to minimize to system tray',
               ),
+              value: _tempSettings.minimizeToTray,
+              onChanged: (value) =>
+                  _updateSetting(_tempSettings.copyWith(minimizeToTray: value)),
               secondary: const Icon(Icons.minimize),
+            ),
+            SwitchListTile(
+              title: const Text('Close to System Tray'),
+              subtitle: const Text(
+                'Minimize to tray instead of closing when X button is clicked',
+              ),
+              value: _tempSettings.closeToTray,
+              onChanged: (value) =>
+                  _updateSetting(_tempSettings.copyWith(closeToTray: value)),
+              secondary: const Icon(Icons.close),
             ),
             SwitchListTile(
               title: const Text('Start Minimized'),
               subtitle: const Text('Start the application minimized to tray'),
               value: _tempSettings.startMinimized,
-              onChanged: (value) => _updateSetting(
-                _tempSettings.copyWith(startMinimized: value),
-              ),
+              onChanged: (value) =>
+                  _updateSetting(_tempSettings.copyWith(startMinimized: value)),
               secondary: const Icon(Icons.launch),
             ),
           ],

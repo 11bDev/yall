@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.2+1
+version: 1.0.3+1
 
 environment:
   sdk: ^3.8.1
@@ -65,6 +65,14 @@ dependencies:
   # Package info for version details
   package_info_plus: ^8.0.0
 
+  # Image handling and file picking
+  file_picker: ^8.1.2
+  image: ^4.2.0
+  path: ^1.9.0
+  mime: ^1.0.6
+  yaru: ^0.4.8
+  handy_window: ^0.4.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -97,6 +105,18 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/icons/
+    - assets/fonts/
+
+  # Ubuntu fonts for better Ubuntu integration
+  fonts:
+    - family: Ubuntu
+      fonts:
+        - asset: assets/fonts/Ubuntu-Regular.ttf
+        - asset: assets/fonts/Ubuntu-Italic.ttf
+          style: italic
+    - family: UbuntuMono
+      fonts:
+        - asset: assets/fonts/UbuntuMono-Regular.ttf
 
 # Flutter Launcher Icons configuration
 flutter_launcher_icons:

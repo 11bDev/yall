@@ -2,7 +2,8 @@
 enum PlatformType {
   mastodon('mastodon', 'Mastodon', 500),
   bluesky('bluesky', 'Bluesky', 300),
-  nostr('nostr', 'Nostr', 800); // 800 character limit for Nostr
+  nostr('nostr', 'Nostr', 800), // 800 character limit for Nostr
+  microblog('microblog', 'Micro.blog', 280); // 280 character limit for Micro.blog
 
   const PlatformType(this.id, this.displayName, this.characterLimit);
 

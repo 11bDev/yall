@@ -7,10 +7,12 @@ import '../providers/account_manager.dart';
 import 'account_selector.dart';
 
 /// Callback function for platform selection changes
-typedef PlatformSelectionCallback = void Function(PlatformType platform, bool selected);
+typedef PlatformSelectionCallback =
+    void Function(PlatformType platform, bool selected);
 
 /// Callback function for account selection changes
-typedef AccountSelectionCallback = void Function(PlatformType platform, Account? account);
+typedef AccountSelectionCallback =
+    void Function(PlatformType platform, Account? account);
 
 /// Widget for selecting social media platforms and associated accounts
 class PlatformSelector extends StatelessWidget {
@@ -57,8 +59,9 @@ class PlatformSelector extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 12),
-                ...PlatformType.values.map((platform) =>
-                  _buildPlatformRow(context, platform, accountManager),
+                ...PlatformType.values.map(
+                  (platform) =>
+                      _buildPlatformRow(context, platform, accountManager),
                 ),
                 if (selectedPlatforms.isEmpty)
                   Padding(
@@ -73,9 +76,10 @@ class PlatformSelector extends StatelessWidget {
                         const SizedBox(width: 4),
                         Text(
                           'Please select at least one platform',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.error,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.error,
+                              ),
                         ),
                       ],
                     ),
@@ -122,7 +126,9 @@ class PlatformSelector extends StatelessWidget {
                     Text(
                       platform.displayName,
                       style: TextStyle(
-                        color: isEnabled ? null : Theme.of(context).disabledColor,
+                        color: isEnabled
+                            ? null
+                            : Theme.of(context).disabledColor,
                         fontWeight: isSelected ? FontWeight.w500 : null,
                       ),
                     ),
@@ -161,7 +167,8 @@ class PlatformSelector extends StatelessWidget {
             AccountSelector(
               platform: platform,
               selectedAccount: selectedAccount,
-              onAccountSelected: (account) => onAccountSelected(platform, account),
+              onAccountSelected: (account) =>
+                  onAccountSelected(platform, account),
               onAddAccount: () => _handleAddAccount(context, platform),
               enabled: enabled,
               width: 200,
@@ -172,7 +179,10 @@ class PlatformSelector extends StatelessWidget {
     );
   }
 
-  Widget _buildAccountAvailabilityIndicator(BuildContext context, bool hasAccounts) {
+  Widget _buildAccountAvailabilityIndicator(
+    BuildContext context,
+    bool hasAccounts,
+  ) {
     return Container(
       width: 8,
       height: 8,
@@ -192,7 +202,9 @@ class PlatformSelector extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Add ${platform.displayName} Account'),
-        content: const Text('Account management will be available in the settings window.'),
+        content: const Text(
+          'Account management will be available in the settings window.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),

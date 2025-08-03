@@ -63,6 +63,8 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
         return ['identifier', 'password'];
       case PlatformType.nostr:
         return ['private_key'];
+      case PlatformType.microblog:
+        return ['username', 'app_token'];
     }
   }
 
@@ -459,6 +461,13 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
             '2. Your private key is all you need - no username required\n'
             '3. Keep your private key secure and never share it\n'
             '4. Optional: Enter a display username for this account';
+      case PlatformType.microblog:
+        return 'To get your Micro.blog app token:\n'
+            '1. Go to micro.blog and sign in\n'
+            '2. Navigate to Account → App tokens\n'
+            '3. Click "Generate app token"\n'
+            '4. Copy the generated token\n'
+            '5. Enter your Micro.blog username';
     }
   }
 
@@ -470,6 +479,8 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
         return Icons.cloud;
       case PlatformType.nostr:
         return Icons.bolt;
+      case PlatformType.microblog:
+        return Icons.rss_feed;
     }
   }
 

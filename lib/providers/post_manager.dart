@@ -5,10 +5,13 @@ import '../models/account.dart';
 import '../models/post_result.dart';
 import '../models/platform_type.dart';
 import '../models/posting_progress.dart';
+import '../models/post_data.dart';
+import '../models/media_attachment.dart';
 import '../services/social_platform_service.dart';
 import '../services/mastodon_service.dart';
 import '../services/bluesky_service.dart';
 import '../services/nostr_service.dart';
+import '../services/microblog_service.dart';
 import '../services/retry_manager.dart';
 
 /// Exception thrown by PostManager operations
@@ -39,6 +42,7 @@ class PostManager extends ChangeNotifier {
             PlatformType.mastodon: MastodonService(),
             PlatformType.bluesky: BlueskyService(),
             PlatformType.nostr: NostrService(),
+            PlatformType.microblog: MicroblogService(),
           };
 
   /// Check if a posting operation is currently in progress
@@ -88,13 +92,13 @@ class PostManager extends ChangeNotifier {
 
   /// Publish content to selected platforms with specified accounts
   ///
-  /// [content] - The text content to post
+  /// [postData] - The post data including content and media
   /// [selectedPlatforms] - Set of platforms to post to
   /// [selectedAccounts] - Map of platform to account for posting
   ///
   /// Returns a [PostResult] with the outcome for each platform
   Future<PostResult> publishToSelectedPlatforms(
-    String content,
+    PostData postData,
     Set<PlatformType> selectedPlatforms,
     Map<PlatformType, Account> selectedAccounts,
   ) async {
@@ -113,8 +117,8 @@ class PostManager extends ChangeNotifier {
       notifyListeners();
 
       // Validate inputs
-      if (content.trim().isEmpty) {
-        throw PostManagerException('Content cannot be empty');
+      if (!postData.isValid) {
+        throw PostManagerException('Post must have content or media attachments');
       }
 
       if (selectedPlatforms.isEmpty) {
@@ -123,7 +127,7 @@ class PostManager extends ChangeNotifier {
 
       // Validate character limits for all selected platforms
       final characterLimitValidation = validateCharacterLimits(
-        content,
+        postData.content,
         selectedPlatforms,
       );
       if (!characterLimitValidation.isValid) {
@@ -177,7 +181,7 @@ class PostManager extends ChangeNotifier {
           notifyListeners();
 
           // Create a failure result for unsupported platform
-          final failureResult = PostResult.empty(content).addPlatformResult(
+          final failureResult = PostResult.empty(postData.content).addPlatformResult(
             platform,
             false,
             error: 'Platform service not available',
@@ -190,7 +194,7 @@ class PostManager extends ChangeNotifier {
         // Create posting future with progress tracking
         final postingFuture = _postToPlatform(
           service,
-          content,
+          postData,
           account,
           platform,
         );
@@ -209,14 +213,14 @@ class PostManager extends ChangeNotifier {
       if (_cancellationCompleter!.isCompleted) {
         return PostResult.allFailed(
           selectedPlatforms,
-          content,
+          postData.content,
           'Posting cancelled',
           PostErrorType.unknownError,
         );
       }
 
       // Combine all results into a single PostResult
-      PostResult combinedResult = PostResult.empty(content);
+      PostResult combinedResult = PostResult.empty(postData.content);
       for (final result in results) {
         for (final entry in result.platformResults.entries) {
           final platform = entry.key;
@@ -259,7 +263,7 @@ class PostManager extends ChangeNotifier {
       // Create a failure result for all platforms
       final failureResult = PostResult.allFailed(
         selectedPlatforms,
-        content,
+        postData.content,
         errorMessage,
         PostErrorType.unknownError,
       );
@@ -280,7 +284,7 @@ class PostManager extends ChangeNotifier {
   /// Post to a single platform with progress tracking
   Future<PostResult> _postToPlatform(
     SocialPlatformService service,
-    String content,
+    PostData postData,
     Account account,
     PlatformType platform,
   ) async {
@@ -293,16 +297,19 @@ class PostManager extends ChangeNotifier {
       notifyListeners();
 
       // Truncate content if necessary for this platform
-      String platformContent = content;
+      String platformContent = postData.content;
       final characterLimit = service.characterLimit;
-      if (characterLimit > 0 && content.length > characterLimit) {
-        platformContent = content.substring(0, characterLimit);
+      if (characterLimit > 0 && postData.content.length > characterLimit) {
+        platformContent = postData.content.substring(0, characterLimit);
         // Optionally add an ellipsis to indicate truncation
         if (platformContent.length >= 3) {
           platformContent =
               '${platformContent.substring(0, platformContent.length - 3)}...';
         }
       }
+
+      // Create platform-specific post data
+      final platformPostData = postData.copyWith(content: platformContent);
 
       // Validate account credentials
       if (!service.hasRequiredCredentials(account)) {
@@ -326,11 +333,10 @@ class PostManager extends ChangeNotifier {
         return result;
       }
 
-      // Attempt to publish the post with retry logic (using truncated content)
-      final result = await service.publishPostWithRetry(
-        platformContent,
-        account,
-      );
+      // Attempt to publish the post with media support
+      final result = platformPostData.hasMedia
+          ? await service.publishPostWithMediaRetry(platformPostData, account)
+          : await service.publishPostWithRetry(platformContent, account);
 
       // Update progress based on result
       if (result.isSuccessful(platform)) {
@@ -353,7 +359,7 @@ class PostManager extends ChangeNotifier {
       return result;
     } catch (e) {
       // Handle any exceptions that occur during posting
-      final result = service.handleError(content, e);
+      final result = service.handleError(postData.content, e);
 
       // Update progress to failed state
       _progress = _progress.updatePlatformStatus(

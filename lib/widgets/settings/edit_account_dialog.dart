@@ -88,6 +88,8 @@ class _EditAccountDialogState extends State<EditAccountDialog> {
         return ['handle', 'app_password'];
       case PlatformType.nostr:
         return ['private_key'];
+      case PlatformType.microblog:
+        return ['username', 'app_token'];
     }
   }
 
@@ -436,6 +438,8 @@ class _EditAccountDialogState extends State<EditAccountDialog> {
         return Icons.cloud;
       case PlatformType.nostr:
         return Icons.bolt;
+      case PlatformType.microblog:
+        return Icons.rss_feed;
     }
   }
 

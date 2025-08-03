@@ -6,6 +6,7 @@ import 'platform_type.dart';
 class AppSettings {
   final ThemeMode themeMode;
   final bool minimizeToTray;
+  final bool closeToTray;
   final bool startMinimized;
   final Map<PlatformType, String> defaultAccounts;
   final bool autoSaveContent;
@@ -16,6 +17,7 @@ class AppSettings {
   const AppSettings({
     this.themeMode = ThemeMode.system,
     this.minimizeToTray = true,
+    this.closeToTray = true,
     this.startMinimized = false,
     this.defaultAccounts = const {},
     this.autoSaveContent = true,
@@ -38,6 +40,7 @@ class AppSettings {
   AppSettings copyWith({
     ThemeMode? themeMode,
     bool? minimizeToTray,
+    bool? closeToTray,
     bool? startMinimized,
     Map<PlatformType, String>? defaultAccounts,
     bool? autoSaveContent,
@@ -48,6 +51,7 @@ class AppSettings {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
       minimizeToTray: minimizeToTray ?? this.minimizeToTray,
+      closeToTray: closeToTray ?? this.closeToTray,
       startMinimized: startMinimized ?? this.startMinimized,
       defaultAccounts: defaultAccounts ?? Map.from(this.defaultAccounts),
       autoSaveContent: autoSaveContent ?? this.autoSaveContent,
@@ -62,6 +66,7 @@ class AppSettings {
     return {
       'themeMode': _themeModeToString(themeMode),
       'minimizeToTray': minimizeToTray,
+      'closeToTray': closeToTray,
       'startMinimized': startMinimized,
       'defaultAccounts': defaultAccounts.map(
         (platform, accountId) => MapEntry(platform.id, accountId),
@@ -92,6 +97,7 @@ class AppSettings {
     return AppSettings(
       themeMode: _themeModeFromString(json['themeMode'] as String?),
       minimizeToTray: json['minimizeToTray'] as bool? ?? true,
+      closeToTray: json['closeToTray'] as bool? ?? true,
       startMinimized: json['startMinimized'] as bool? ?? false,
       defaultAccounts: defaultAccountsMap,
       autoSaveContent: json['autoSaveContent'] as bool? ?? true,
@@ -215,6 +221,7 @@ class AppSettings {
     return other is AppSettings &&
         other.themeMode == themeMode &&
         other.minimizeToTray == minimizeToTray &&
+        other.closeToTray == closeToTray &&
         other.startMinimized == startMinimized &&
         _mapEquals(other.defaultAccounts, defaultAccounts) &&
         other.autoSaveContent == autoSaveContent &&
@@ -228,6 +235,7 @@ class AppSettings {
     return Object.hash(
       themeMode,
       minimizeToTray,
+      closeToTray,
       startMinimized,
       Object.hashAll(
         defaultAccounts.entries.map((e) => Object.hash(e.key, e.value)),
@@ -260,7 +268,7 @@ class AppSettings {
   @override
   String toString() {
     return 'AppSettings(themeMode: $themeMode, minimizeToTray: $minimizeToTray, '
-        'startMinimized: $startMinimized, defaultAccounts: $defaultAccounts, '
+        'closeToTray: $closeToTray, startMinimized: $startMinimized, defaultAccounts: $defaultAccounts, '
         'autoSaveContent: $autoSaveContent, showCharacterCount: $showCharacterCount, '
         'confirmBeforePosting: $confirmBeforePosting, nostrRelays: $nostrRelays)';
   }
