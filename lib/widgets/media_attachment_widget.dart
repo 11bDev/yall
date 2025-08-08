@@ -128,7 +128,7 @@ class MediaAttachmentWidget extends StatelessWidget {
   Widget _buildImagePreview(BuildContext context) {
     return Container(
       height: 200,
-      color: Theme.of(context).colorScheme.surfaceVariant,
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: Stack(
         children: [
           // Image
@@ -184,7 +184,7 @@ class MediaAttachmentWidget extends StatelessWidget {
   Widget _buildVideoPreview(BuildContext context) {
     return Container(
       height: 200,
-      color: Theme.of(context).colorScheme.surfaceVariant,
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: Stack(
         children: [
           // Video placeholder
@@ -244,7 +244,7 @@ class MediaAttachmentWidget extends StatelessWidget {
   Widget _buildGenericPreview(BuildContext context) {
     return Container(
       height: 120,
-      color: Theme.of(context).colorScheme.surfaceVariant,
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

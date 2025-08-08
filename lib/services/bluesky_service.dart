@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../models/account.dart';
 import '../models/post_result.dart';
 import '../models/platform_type.dart';
+import '../models/post_data.dart';
 import 'error_handler.dart';
 import 'social_platform_service.dart';
 
@@ -15,7 +16,7 @@ class BlueskyService extends SocialPlatformService {
   static const String _defaultPdsUrl = 'https://bsky.social';
 
   BlueskyService({http.Client? httpClient})
-    : _httpClient = httpClient ?? http.Client();
+      : _httpClient = httpClient ?? http.Client();
 
   @override
   PlatformType get platformType => PlatformType.bluesky;
@@ -55,7 +56,7 @@ class BlueskyService extends SocialPlatformService {
       final pdsUrl = account.getCredential<String>('pds_url') ?? _defaultPdsUrl;
 
       // Create session with AT Protocol
-      final sessionData = await _createSession(
+      await _createSession(
         pdsUrl: pdsUrl,
         identifier: identifier,
         password: password,
@@ -64,49 +65,39 @@ class BlueskyService extends SocialPlatformService {
       // If we get here, authentication was successful
       return true;
     } catch (e, stackTrace) {
-      if (e is SocialPlatformException) {
-        _errorHandler.logError(
-          'Bluesky authentication',
-          e,
-          stackTrace: stackTrace,
-          context: {'account_id': account.id},
-          platform: platformType,
-        );
-        rethrow;
-      }
-      final error = SocialPlatformException(
-        platform: platformType,
-        errorType: PostErrorType.authenticationError,
-        message: 'Authentication failed: ${e.toString()}',
-        originalError: e,
-      );
       _errorHandler.logError(
-        'Bluesky authentication',
-        error,
+        'Bluesky authentication error',
+        e,
         stackTrace: stackTrace,
         context: {'account_id': account.id},
         platform: platformType,
       );
-      throw error;
+      return false;
     }
   }
 
   @override
   Future<PostResult> publishPost(String content, Account account) async {
+    // Delegate to publishPostWithMedia for text-only posts
+    return publishPostWithMedia(PostData(content: content), account);
+  }
+
+  @override
+  Future<PostResult> publishPostWithMedia(PostData postData, Account account) async {
     try {
       // Validate content length
-      if (!isContentValid(content)) {
+      if (!isContentValid(postData.content)) {
         final result = createFailureResult(
-          content,
+          postData.content,
           'Content exceeds character limit of $characterLimit',
           PostErrorType.contentTooLong,
         );
         _errorHandler.logError(
           'Bluesky post validation',
-          'Content too long: ${content.length} > $characterLimit',
+          'Content too long: ${postData.content.length} > $characterLimit',
           context: {
             'account_id': account.id,
-            'content_length': content.length,
+            'content_length': postData.content.length,
             'character_limit': characterLimit,
           },
           platform: platformType,
@@ -117,7 +108,7 @@ class BlueskyService extends SocialPlatformService {
       // Validate credentials
       if (!hasRequiredCredentials(account)) {
         final result = createFailureResult(
-          content,
+          postData.content,
           'Missing required credentials: ${requiredCredentialFields.join(', ')}',
           PostErrorType.invalidCredentials,
         );
@@ -159,13 +150,54 @@ class BlueskyService extends SocialPlatformService {
         did = sessionData['did'] as String;
       }
 
+      // --- Bluesky image upload and embed logic ---
+      List<Map<String, dynamic>> embedImages = [];
+      for (final attachment in postData.mediaAttachments) {
+        try {
+          // Upload image as blob
+          final blobResponse = await _httpClient.post(
+            Uri.parse('$pdsUrl/xrpc/com.atproto.repo.uploadBlob'),
+            headers: {
+              'Authorization': 'Bearer $accessJwt',
+              'Content-Type': attachment.mimeType,
+            },
+            body: attachment.bytes ?? await attachment.file!.readAsBytes(),
+          );
+          if (blobResponse.statusCode == 200) {
+            final blobData = jsonDecode(blobResponse.body);
+            if (blobData['blob'] != null) {
+              final blob = blobData['blob'] as Map<String, dynamic>;
+              embedImages.add({
+                'alt': attachment.description ?? '',
+                'image': {
+                  '\$type': 'blob',
+                  'ref': blob['ref'],
+                  'mimeType': blob['mimeType'],
+                  'size': blob['size'],
+                },
+              });
+            }
+          } else {
+            print('Failed to upload Bluesky image: ${blobResponse.body}');
+          }
+        } catch (e) {
+          print('Exception uploading Bluesky image: $e');
+        }
+      }
+
       // Create the post record
       final now = DateTime.now().toUtc();
-      final postRecord = {
+      final postRecord = <String, dynamic>{
         '\$type': 'app.bsky.feed.post',
-        'text': content,
+        'text': postData.content,
         'createdAt': now.toIso8601String(),
       };
+      if (embedImages.isNotEmpty) {
+        postRecord['embed'] = {
+          '\$type': 'app.bsky.embed.images',
+          'images': embedImages,
+        };
+      }
 
       // Create the record via XRPC
       final response = await _httpClient.post(
@@ -183,136 +215,29 @@ class BlueskyService extends SocialPlatformService {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         // Successfully posted
-        return createSuccessResult(content);
-      } else if (response.statusCode == 401) {
+        return createSuccessResult(postData.content);
+      } else {
+        final errorData = jsonDecode(response.body);
+        final errorMessage = errorData['message'] ?? errorData['error'] ?? 'Failed to post to Bluesky (${response.statusCode})';
         final result = createFailureResult(
-          content,
-          'Authentication failed - invalid or expired token',
-          PostErrorType.authenticationError,
-        );
-        _errorHandler.logError(
-          'Bluesky post authentication',
-          'Authentication failed',
-          context: {
-            'account_id': account.id,
-            'status_code': response.statusCode,
-            'pds_url': pdsUrl,
-          },
-          platform: platformType,
-        );
-        return result;
-      } else if (response.statusCode == 400) {
-        // Parse error details from response
-        String errorMessage = 'Invalid post data';
-        try {
-          final errorData = jsonDecode(response.body) as Map<String, dynamic>;
-          if (errorData.containsKey('message')) {
-            errorMessage = errorData['message'] as String;
-          } else if (errorData.containsKey('error')) {
-            errorMessage = errorData['error'] as String;
-          }
-        } catch (_) {
-          // Use default error message if parsing fails
-        }
-        final result = createFailureResult(
-          content,
+          postData.content,
           errorMessage,
-          PostErrorType.contentTooLong,
+          PostErrorType.unknownError,
         );
         _errorHandler.logError(
-          'Bluesky post validation',
-          'Post validation failed',
+          'Bluesky post error',
+          errorMessage,
           context: {
             'account_id': account.id,
             'status_code': response.statusCode,
-            'error_message': errorMessage,
             'response_body': response.body,
           },
           platform: platformType,
         );
         return result;
-      } else if (response.statusCode == 429) {
-        final result = createFailureResult(
-          content,
-          'Rate limit exceeded - please wait before posting again',
-          PostErrorType.rateLimitError,
-        );
-        _errorHandler.logError(
-          'Bluesky post rate limit',
-          'Rate limit exceeded',
-          context: {
-            'account_id': account.id,
-            'status_code': response.statusCode,
-            'pds_url': pdsUrl,
-          },
-          platform: platformType,
-        );
-        return result;
-      } else if (response.statusCode >= 500) {
-        final result = createFailureResult(
-          content,
-          'Bluesky server error (${response.statusCode})',
-          PostErrorType.serverError,
-        );
-        _errorHandler.logError(
-          'Bluesky post server error',
-          'Server error occurred',
-          context: {
-            'account_id': account.id,
-            'status_code': response.statusCode,
-            'pds_url': pdsUrl,
-          },
-          platform: platformType,
-        );
-        return result;
-      } else {
-        final result = createFailureResult(
-          content,
-          'Post failed with status ${response.statusCode}',
-          PostErrorType.unknownError,
-        );
-        _errorHandler.logError(
-          'Bluesky post unknown error',
-          'Unknown error occurred',
-          context: {
-            'account_id': account.id,
-            'status_code': response.statusCode,
-            'pds_url': pdsUrl,
-          },
-          platform: platformType,
-        );
-        return result;
       }
-    } on SocketException catch (e, stackTrace) {
-      final result = createFailureResult(
-        content,
-        'Network connection failed',
-        PostErrorType.networkError,
-      );
-      _errorHandler.logError(
-        'Bluesky post network error',
-        e,
-        stackTrace: stackTrace,
-        context: {'account_id': account.id},
-        platform: platformType,
-      );
-      return result;
-    } on HttpException catch (e, stackTrace) {
-      final result = createFailureResult(
-        content,
-        'HTTP error: ${e.message}',
-        PostErrorType.networkError,
-      );
-      _errorHandler.logError(
-        'Bluesky post HTTP error',
-        e,
-        stackTrace: stackTrace,
-        context: {'account_id': account.id},
-        platform: platformType,
-      );
-      return result;
     } catch (e, stackTrace) {
-      final result = handleError(content, e);
+      final result = handleError(postData.content, e);
       _errorHandler.logError(
         'Bluesky post unexpected error',
         e,

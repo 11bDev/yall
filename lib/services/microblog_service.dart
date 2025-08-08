@@ -6,7 +6,6 @@ import '../models/account.dart';
 import '../models/post_result.dart';
 import '../models/platform_type.dart';
 import '../models/post_data.dart';
-import '../models/media_attachment.dart';
 import 'error_handler.dart';
 import 'social_platform_service.dart';
 
