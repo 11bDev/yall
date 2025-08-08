@@ -50,9 +50,9 @@ void main() async {
 
     // Set window options for floating window (optimized for COSMIC)
     WindowOptions windowOptions = const WindowOptions(
-      size: Size(600, 500), // Smaller size that COSMIC is less likely to tile
-      minimumSize: Size(400, 300),
-      maximumSize: Size(800, 700), // Constrain maximum size
+      size: Size(650, 750), // Larger size to fit all UI elements comfortably
+      minimumSize: Size(500, 600), // Increased minimum to ensure usability
+      maximumSize: Size(800, 900), // Increased maximum size
       center: true,
       backgroundColor: Colors.transparent,
       skipTaskbar: false,
@@ -162,6 +162,9 @@ class _MainWindowState extends State<MainWindow> with WindowListener {
     final windowStateManager = context.read<WindowStateManager>();
 
     try {
+      // Wait a moment to ensure window is properly sized first
+      await Future.delayed(const Duration(milliseconds: 500));
+
       await windowStateManager.initialize();
 
       // Ensure floating behavior is maintained

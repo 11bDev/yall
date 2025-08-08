@@ -78,7 +78,33 @@ class WindowStateManager extends ChangeNotifier with WindowListener {
     try {
       final stateJson = await _storageService.getSetting(_windowStateKey);
       if (stateJson != null) {
-        _currentState = WindowState.fromJsonString(stateJson);
+        final loadedState = WindowState.fromJsonString(stateJson);
+
+        // Check if current window size matches our desired defaults
+        final currentSize = await windowManager.getSize();
+        const desiredWidth = 650.0;
+        const desiredHeight = 750.0;
+
+        // If current window size matches desired size, prefer current over saved
+        if ((currentSize.width - desiredWidth).abs() < 10 &&
+            (currentSize.height - desiredHeight).abs() < 10) {
+          // Use current position but prefer current size
+          _currentState = WindowState(
+            x: loadedState.x,
+            y: loadedState.y,
+            width: currentSize.width,
+            height: currentSize.height,
+            isMaximized: loadedState.isMaximized,
+            isMinimized: loadedState.isMinimized,
+            isVisible: loadedState.isVisible,
+          );
+          debugPrint(
+            'Using current window size over saved state (matches desired defaults)',
+          );
+        } else {
+          // Validate loaded state against minimum size constraints
+          _currentState = _validateWindowSize(loadedState);
+        }
         debugPrint('Loaded window state: $_currentState');
       } else {
         _currentState = WindowState.defaultState;
@@ -88,6 +114,59 @@ class WindowStateManager extends ChangeNotifier with WindowListener {
       debugPrint('Error loading window state: $e');
       _currentState = WindowState.defaultState;
     }
+  }
+
+  /// Validate and adjust window size to respect minimum constraints
+  WindowState _validateWindowSize(WindowState state) {
+    const double minWidth = 500.0; // Match main.dart minimum
+    const double minHeight = 600.0; // Match main.dart minimum
+    const double preferredWidth = 650.0; // Preferred width from main.dart
+    const double preferredHeight = 750.0; // Preferred height from main.dart
+
+    double? adjustedWidth = state.width;
+    double? adjustedHeight = state.height;
+
+    // Ensure minimum width
+    if (adjustedWidth != null && adjustedWidth < minWidth) {
+      adjustedWidth = preferredWidth; // Use preferred instead of just minimum
+      debugPrint(
+        'Adjusted width from ${state.width} to $adjustedWidth (using preferred size)',
+      );
+    }
+
+    // Ensure minimum height and prefer better height for UI
+    if (adjustedHeight != null && adjustedHeight < minHeight) {
+      adjustedHeight = preferredHeight; // Use preferred instead of just minimum
+      debugPrint(
+        'Adjusted height from ${state.height} to $adjustedHeight (using preferred size)',
+      );
+    }
+
+    // If the saved size is too small for good UX, upgrade to preferred
+    if (adjustedWidth != null && adjustedHeight != null) {
+      if (adjustedWidth < preferredWidth || adjustedHeight < preferredHeight) {
+        adjustedWidth = preferredWidth;
+        adjustedHeight = preferredHeight;
+        debugPrint(
+          'Upgraded window size to preferred dimensions for better UX: ${preferredWidth}x${preferredHeight}',
+        );
+      }
+    }
+
+    // Return adjusted state if changes were made
+    if (adjustedWidth != state.width || adjustedHeight != state.height) {
+      return WindowState(
+        x: state.x,
+        y: state.y,
+        width: adjustedWidth,
+        height: adjustedHeight,
+        isMaximized: state.isMaximized,
+        isMinimized: state.isMinimized,
+        isVisible: state.isVisible,
+      );
+    }
+
+    return state;
   }
 
   /// Save current window state to storage

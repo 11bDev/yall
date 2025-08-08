@@ -22,8 +22,8 @@ class WindowState {
 
   /// Default window state
   static const WindowState defaultState = WindowState(
-    width: 800,
-    height: 600,
+    width: 650,
+    height: 750,
     isMaximized: false,
     isMinimized: false,
     isVisible: true,
