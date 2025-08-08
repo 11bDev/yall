@@ -15,7 +15,7 @@ typedef AccountSelectionCallback =
     void Function(PlatformType platform, Account? account);
 
 /// Widget for selecting social media platforms and associated accounts
-class PlatformSelector extends StatelessWidget {
+class PlatformSelector extends StatefulWidget {
   /// Set of currently selected platforms
   final Set<PlatformType> selectedPlatforms;
 
@@ -34,6 +34,9 @@ class PlatformSelector extends StatelessWidget {
   /// Whether to show account dropdowns for selected platforms
   final bool showAccountSelection;
 
+  /// Whether the selector should be initially expanded
+  final bool initiallyExpanded;
+
   const PlatformSelector({
     super.key,
     required this.selectedPlatforms,
@@ -42,50 +45,84 @@ class PlatformSelector extends StatelessWidget {
     required this.onAccountSelected,
     this.enabled = true,
     this.showAccountSelection = true,
+    this.initiallyExpanded = false,
   });
 
+  @override
+  State<PlatformSelector> createState() => _PlatformSelectorState();
+}
+
+class _PlatformSelectorState extends State<PlatformSelector> {
   @override
   Widget build(BuildContext context) {
     return Consumer<AccountManager>(
       builder: (context, accountManager, child) {
         return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          child: ExpansionTile(
+            initiallyExpanded: widget.initiallyExpanded,
+            title: Row(
               children: [
                 Text(
                   'Select Platforms',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
-                const SizedBox(height: 12),
-                ...PlatformType.values.map(
-                  (platform) =>
-                      _buildPlatformRow(context, platform, accountManager),
-                ),
-                if (selectedPlatforms.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.warning_amber_outlined,
-                          size: 16,
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Please select at least one platform',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: Theme.of(context).colorScheme.error,
-                              ),
-                        ),
-                      ],
+                if (widget.selectedPlatforms.isNotEmpty) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${widget.selectedPlatforms.length}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
+                ],
               ],
             ),
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ...PlatformType.values.map(
+                      (platform) =>
+                          _buildPlatformRow(context, platform, accountManager),
+                    ),
+                    if (widget.selectedPlatforms.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.warning_amber_outlined,
+                              size: 16,
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Please select at least one platform',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ),
         );
       },
@@ -97,11 +134,11 @@ class PlatformSelector extends StatelessWidget {
     PlatformType platform,
     AccountManager accountManager,
   ) {
-    final isSelected = selectedPlatforms.contains(platform);
+    final isSelected = widget.selectedPlatforms.contains(platform);
     final accounts = accountManager.getActiveAccountsForPlatform(platform);
     final hasAccounts = accounts.isNotEmpty;
-    final selectedAccount = selectedAccounts[platform];
-    final isEnabled = enabled && hasAccounts;
+    final selectedAccount = widget.selectedAccounts[platform];
+    final isEnabled = widget.enabled && hasAccounts;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -111,7 +148,7 @@ class PlatformSelector extends StatelessWidget {
           Checkbox(
             value: isSelected,
             onChanged: isEnabled
-                ? (value) => onPlatformToggled(platform, value ?? false)
+                ? (value) => widget.onPlatformToggled(platform, value ?? false)
                 : null,
           ),
           const SizedBox(width: 8),
@@ -162,15 +199,15 @@ class PlatformSelector extends StatelessWidget {
           ),
 
           // Account selection dropdown
-          if (isSelected && showAccountSelection) ...[
+          if (isSelected && widget.showAccountSelection) ...[
             const SizedBox(width: 8),
             AccountSelector(
               platform: platform,
               selectedAccount: selectedAccount,
               onAccountSelected: (account) =>
-                  onAccountSelected(platform, account),
+                  widget.onAccountSelected(platform, account),
               onAddAccount: () => _handleAddAccount(context, platform),
-              enabled: enabled,
+              enabled: widget.enabled,
               width: 200,
             ),
           ],

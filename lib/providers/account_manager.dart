@@ -9,6 +9,7 @@ import '../services/social_platform_service.dart';
 import '../services/mastodon_service.dart';
 import '../services/bluesky_service.dart';
 import '../services/nostr_service.dart';
+import '../services/x_service.dart';
 import '../services/retry_manager.dart';
 
 /// Exception thrown by AccountManager operations
@@ -36,11 +37,14 @@ class AccountManager extends ChangeNotifier {
     SecureStorageService? storageService,
     Map<PlatformType, SocialPlatformService>? platformServices,
   }) : _storageService = storageService ?? SecureStorageService(),
-       _platformServices = platformServices ?? {
-         PlatformType.mastodon: MastodonService(),
-         PlatformType.bluesky: BlueskyService(),
-         PlatformType.nostr: NostrService(),
-       };
+       _platformServices =
+           platformServices ??
+           {
+             PlatformType.mastodon: MastodonService(),
+             PlatformType.bluesky: BlueskyService(),
+             PlatformType.nostr: NostrService(),
+             PlatformType.x: XService(),
+           };
 
   /// Get all accounts
   List<Account> get accounts => List.unmodifiable(_accounts);
@@ -94,9 +98,13 @@ class AccountManager extends ChangeNotifier {
             final account = Account.fromJson(accountData);
 
             // Load credentials for the account
-            final credentials = await _storageService.getAccountCredentials(accountId);
+            final credentials = await _storageService.getAccountCredentials(
+              accountId,
+            );
             if (credentials != null) {
-              final accountWithCredentials = account.withCredentials(credentials);
+              final accountWithCredentials = account.withCredentials(
+                credentials,
+              );
               loadedAccounts.add(accountWithCredentials);
             } else {
               // Account exists but no credentials - add without credentials
@@ -134,7 +142,9 @@ class AccountManager extends ChangeNotifier {
       // Validate credentials format
       final service = _platformServices[platform];
       if (service == null) {
-        throw AccountManagerException('Unsupported platform: ${platform.displayName}');
+        throw AccountManagerException(
+          'Unsupported platform: ${platform.displayName}',
+        );
       }
 
       // Create account with generated ID
@@ -152,7 +162,7 @@ class AccountManager extends ChangeNotifier {
       // Validate credentials with the service
       if (!service.hasRequiredCredentials(account)) {
         throw AccountManagerException(
-          'Missing required credentials for ${platform.displayName}: ${service.requiredCredentialFields.join(', ')}'
+          'Missing required credentials for ${platform.displayName}: ${service.requiredCredentialFields.join(', ')}',
         );
       }
 
@@ -188,23 +198,33 @@ class AccountManager extends ChangeNotifier {
     _clearError();
 
     try {
-      final existingIndex = _accounts.indexWhere((a) => a.id == updatedAccount.id);
+      final existingIndex = _accounts.indexWhere(
+        (a) => a.id == updatedAccount.id,
+      );
       if (existingIndex == -1) {
-        throw AccountManagerException('Account not found: ${updatedAccount.id}');
+        throw AccountManagerException(
+          'Account not found: ${updatedAccount.id}',
+        );
       }
 
       // Validate credentials if they were updated
       final service = _platformServices[updatedAccount.platform];
       if (service != null && !service.hasRequiredCredentials(updatedAccount)) {
         throw AccountManagerException(
-          'Missing required credentials for ${updatedAccount.platform.displayName}: ${service.requiredCredentialFields.join(', ')}'
+          'Missing required credentials for ${updatedAccount.platform.displayName}: ${service.requiredCredentialFields.join(', ')}',
         );
       }
 
       // Update storage
-      await _storageService.storeAccountData(updatedAccount.id, updatedAccount.toJson());
+      await _storageService.storeAccountData(
+        updatedAccount.id,
+        updatedAccount.toJson(),
+      );
       if (updatedAccount.credentials.isNotEmpty) {
-        await _storageService.storeAccountCredentials(updatedAccount.id, updatedAccount.credentials);
+        await _storageService.storeAccountCredentials(
+          updatedAccount.id,
+          updatedAccount.credentials,
+        );
       }
 
       // Update local list

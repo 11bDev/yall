@@ -65,6 +65,8 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
         return ['private_key'];
       case PlatformType.microblog:
         return ['username', 'app_token'];
+      case PlatformType.x:
+        return ['access_token', 'access_token_secret', 'api_key', 'api_secret'];
     }
   }
 
@@ -317,6 +319,12 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
         return 'Server URL';
       case 'access_token':
         return 'Access Token';
+      case 'access_token_secret':
+        return 'Access Token Secret';
+      case 'api_key':
+        return 'API Key (Consumer Key)';
+      case 'api_secret':
+        return 'API Secret (Consumer Secret)';
       case 'identifier':
         return 'Username/Handle';
       case 'password':
@@ -337,7 +345,13 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
       case 'instance_url':
         return 'https://mastodon.social';
       case 'access_token':
-        return 'Your Mastodon access token';
+        return 'Your access token from X developer portal';
+      case 'access_token_secret':
+        return 'Your access token secret from X developer portal';
+      case 'api_key':
+        return 'Your API key from X developer portal';
+      case 'api_secret':
+        return 'Your API secret from X developer portal';
       case 'identifier':
         return 'your-handle.bsky.social or your-domain.com';
       case 'password':
@@ -354,6 +368,11 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
       case 'instance_url':
         return Icons.dns;
       case 'access_token':
+      case 'access_token_secret':
+        return Icons.key;
+      case 'api_key':
+      case 'api_secret':
+        return Icons.api;
       case 'password':
         return Icons.key;
       case 'identifier':
@@ -394,6 +413,26 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
         // The service will validate the specific format
         if (value.trim().length < 32) {
           return 'Private key too short - should be 64 hex chars or nsec format';
+        }
+        break;
+      case 'access_token':
+        if (value.trim().length < 20) {
+          return 'Access token appears too short';
+        }
+        break;
+      case 'access_token_secret':
+        if (value.trim().length < 20) {
+          return 'Access token secret appears too short';
+        }
+        break;
+      case 'api_key':
+        if (value.trim().length < 15) {
+          return 'API key appears too short';
+        }
+        break;
+      case 'api_secret':
+        if (value.trim().length < 20) {
+          return 'API secret appears too short';
         }
         break;
     }
@@ -468,6 +507,17 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
             '3. Click "Generate app token"\n'
             '4. Copy the generated token\n'
             '5. Enter your Micro.blog username';
+      case PlatformType.x:
+        return 'To get your X (Twitter) credentials:\n'
+            '1. Go to developer.twitter.com and sign in\n'
+            '2. Create a new app or use an existing one\n'
+            '3. Go to "Keys and Tokens" tab\n'
+            '4. Copy "API Key" → paste in API Key field\n'
+            '5. Copy "API Key Secret" → paste in API Secret field\n'
+            '6. Generate "Access Token & Secret" if not available\n'
+            '7. Copy "Access Token" → paste in Access Token field\n'
+            '8. Copy "Access Token Secret" → paste in Access Token Secret field\n'
+            '9. Make sure your app has "Read and Write" permissions';
     }
   }
 
@@ -481,6 +531,8 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
         return Icons.bolt;
       case PlatformType.microblog:
         return Icons.rss_feed;
+      case PlatformType.x:
+        return Icons.close; // X icon placeholder
     }
   }
 

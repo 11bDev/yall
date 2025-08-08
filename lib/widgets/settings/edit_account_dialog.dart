@@ -90,6 +90,8 @@ class _EditAccountDialogState extends State<EditAccountDialog> {
         return ['private_key'];
       case PlatformType.microblog:
         return ['username', 'app_token'];
+      case PlatformType.x:
+        return ['access_token', 'access_token_secret', 'api_key', 'api_secret'];
     }
   }
 
@@ -360,6 +362,12 @@ class _EditAccountDialogState extends State<EditAccountDialog> {
         return 'Server URL';
       case 'access_token':
         return 'Access Token';
+      case 'access_token_secret':
+        return 'Access Token Secret';
+      case 'api_key':
+        return 'API Key (Consumer Key)';
+      case 'api_secret':
+        return 'API Secret (Consumer Secret)';
       case 'handle':
         return 'Handle';
       case 'app_password':
@@ -380,7 +388,13 @@ class _EditAccountDialogState extends State<EditAccountDialog> {
       case 'server_url':
         return 'https://mastodon.social';
       case 'access_token':
-        return 'Your Mastodon access token';
+        return 'Your access token from X developer portal';
+      case 'access_token_secret':
+        return 'Your access token secret from X developer portal';
+      case 'api_key':
+        return 'Your API key from X developer portal';
+      case 'api_secret':
+        return 'Your API secret from X developer portal';
       case 'handle':
         return 'your-handle.bsky.social';
       case 'app_password':
@@ -397,6 +411,11 @@ class _EditAccountDialogState extends State<EditAccountDialog> {
       case 'server_url':
         return Icons.dns;
       case 'access_token':
+      case 'access_token_secret':
+        return Icons.key;
+      case 'api_key':
+      case 'api_secret':
+        return Icons.api;
       case 'app_password':
         return Icons.key;
       case 'handle':
@@ -440,6 +459,8 @@ class _EditAccountDialogState extends State<EditAccountDialog> {
         return Icons.bolt;
       case PlatformType.microblog:
         return Icons.rss_feed;
+      case PlatformType.x:
+        return Icons.close; // X icon placeholder
     }
   }
 

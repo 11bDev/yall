@@ -6,12 +6,12 @@ import '../models/post_result.dart';
 import '../models/platform_type.dart';
 import '../models/posting_progress.dart';
 import '../models/post_data.dart';
-import '../models/media_attachment.dart';
 import '../services/social_platform_service.dart';
 import '../services/mastodon_service.dart';
 import '../services/bluesky_service.dart';
 import '../services/nostr_service.dart';
 import '../services/microblog_service.dart';
+import '../services/x_service.dart';
 import '../services/retry_manager.dart';
 
 /// Exception thrown by PostManager operations
@@ -43,6 +43,7 @@ class PostManager extends ChangeNotifier {
             PlatformType.bluesky: BlueskyService(),
             PlatformType.nostr: NostrService(),
             PlatformType.microblog: MicroblogService(),
+            PlatformType.x: XService(),
           };
 
   /// Check if a posting operation is currently in progress
@@ -70,6 +71,12 @@ class PostManager extends ChangeNotifier {
   /// Clear last post result
   void clearLastResult() {
     _lastPostResult = null;
+    notifyListeners();
+  }
+
+  /// Clear posting progress and reset to idle state
+  void clearProgress() {
+    _progress = PostingProgress.idle();
     notifyListeners();
   }
 
@@ -118,7 +125,9 @@ class PostManager extends ChangeNotifier {
 
       // Validate inputs
       if (!postData.isValid) {
-        throw PostManagerException('Post must have content or media attachments');
+        throw PostManagerException(
+          'Post must have content or media attachments',
+        );
       }
 
       if (selectedPlatforms.isEmpty) {
@@ -181,12 +190,13 @@ class PostManager extends ChangeNotifier {
           notifyListeners();
 
           // Create a failure result for unsupported platform
-          final failureResult = PostResult.empty(postData.content).addPlatformResult(
-            platform,
-            false,
-            error: 'Platform service not available',
-            errorType: PostErrorType.platformUnavailable,
-          );
+          final failureResult = PostResult.empty(postData.content)
+              .addPlatformResult(
+                platform,
+                false,
+                error: 'Platform service not available',
+                errorType: PostErrorType.platformUnavailable,
+              );
           postingFutures.add(Future.value(failureResult));
           continue;
         }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -156,12 +157,28 @@ class _PostingWidgetState extends State<PostingWidget> {
   }
 
   void _showSuccessMessage() {
+    // Clear any existing SnackBars first
+    ScaffoldMessenger.of(context).clearSnackBars();
+
+    // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Post published successfully!'),
         backgroundColor: Colors.green,
+        duration: Duration(seconds: 10),
+        behavior: SnackBarBehavior.floating,
       ),
     );
+
+    // Set up timer to clear both SnackBar and progress after 10 seconds
+    Timer(const Duration(seconds: 10), () {
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        // Clear the posting progress to hide the progress widget
+        final postManager = context.read<PostManager>();
+        postManager.clearProgress();
+      }
+    });
   }
 
   void _showErrorMessage(dynamic result) {
@@ -307,6 +324,7 @@ class _PostingWidgetState extends State<PostingWidget> {
                 onPlatformToggled: _onPlatformToggled,
                 onAccountSelected: _onAccountSelected,
                 enabled: !postManager.isPosting,
+                initiallyExpanded: _selectedPlatforms.isNotEmpty,
               ),
 
               const SizedBox(height: 16),

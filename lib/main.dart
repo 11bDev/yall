@@ -120,16 +120,16 @@ class MainWindow extends StatefulWidget {
   State<MainWindow> createState() => _MainWindowState();
 }
 
-class _MainWindowState extends State<MainWindow> {
+class _MainWindowState extends State<MainWindow> with WindowListener {
   @override
   void initState() {
     super.initState();
     // Load accounts and initialize services when the app starts
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AccountManager>().loadAccounts();
-      _initializeServices();
       _initializeWindowManager();
       _initializeSystemTray();
+      _setupWindowCloseHandling();
     });
   }
 
@@ -203,6 +203,18 @@ class _MainWindowState extends State<MainWindow> {
       });
     } catch (e) {
       debugPrint('Failed to maintain floating behavior: $e');
+    }
+  }
+
+  Future<void> _setupWindowCloseHandling() async {
+    try {
+      // Enable window close interception
+      await windowManager.setPreventClose(true);
+      // Add this as a window listener
+      windowManager.addListener(this);
+      debugPrint('Window close prevention enabled and listener added');
+    } catch (e) {
+      debugPrint('Failed to set up window close handling: $e');
     }
   }
 
@@ -451,8 +463,58 @@ class _MainWindowState extends State<MainWindow> {
     );
   }
 
+  // WindowListener implementation
+  @override
+  void onWindowClose() {
+    debugPrint('WindowListener: onWindowClose called');
+    // Handle the close event by minimizing to tray
+    _handleWindowClose();
+  }
+
+  @override
+  void onWindowFocus() {
+    // Not needed but required by interface
+  }
+
+  @override
+  void onWindowBlur() {
+    // Not needed but required by interface
+  }
+
+  @override
+  void onWindowMaximize() {
+    // Not needed but required by interface
+  }
+
+  @override
+  void onWindowUnmaximize() {
+    // Not needed but required by interface
+  }
+
+  @override
+  void onWindowMinimize() {
+    // Not needed but required by interface
+  }
+
+  @override
+  void onWindowRestore() {
+    // Not needed but required by interface
+  }
+
+  @override
+  void onWindowResize() {
+    // Not needed but required by interface
+  }
+
+  @override
+  void onWindowMove() {
+    // Not needed but required by interface
+  }
+
   @override
   void dispose() {
+    // Remove the window listener
+    windowManager.removeListener(this);
     // Clean up system tray when the app is disposed
     // Note: We don't need to manually dispose the SystemTrayManager here
     // as it will be disposed automatically when the provider is disposed

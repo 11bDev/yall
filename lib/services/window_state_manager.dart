@@ -318,7 +318,8 @@ class WindowStateManager extends ChangeNotifier with WindowListener {
   @override
   void onWindowClose() {
     debugPrint('Window close event received');
-    // This will be handled by the main window's PopScope
+    // This should not actually close the window - we prevent it and handle it ourselves
+    // The PopScope in main.dart will handle the minimize to tray logic
   }
 
   @override

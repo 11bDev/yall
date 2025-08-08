@@ -314,6 +314,8 @@ class _AccountSettingsTabState extends State<AccountSettingsTab> {
         return Icons.bolt;
       case PlatformType.microblog:
         return Icons.rss_feed;
+      case PlatformType.x:
+        return Icons.close; // X icon placeholder
     }
   }
 
