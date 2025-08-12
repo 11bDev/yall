@@ -16,7 +16,7 @@ class BlueskyService extends SocialPlatformService {
   static const String _defaultPdsUrl = 'https://bsky.social';
 
   BlueskyService({http.Client? httpClient})
-      : _httpClient = httpClient ?? http.Client();
+    : _httpClient = httpClient ?? http.Client();
 
   @override
   PlatformType get platformType => PlatformType.bluesky;
@@ -83,7 +83,10 @@ class BlueskyService extends SocialPlatformService {
   }
 
   @override
-  Future<PostResult> publishPostWithMedia(PostData postData, Account account) async {
+  Future<PostResult> publishPostWithMedia(
+    PostData postData,
+    Account account,
+  ) async {
     try {
       // Validate content length
       if (!isContentValid(postData.content)) {
@@ -218,7 +221,10 @@ class BlueskyService extends SocialPlatformService {
         return createSuccessResult(postData.content);
       } else {
         final errorData = jsonDecode(response.body);
-        final errorMessage = errorData['message'] ?? errorData['error'] ?? 'Failed to post to Bluesky (${response.statusCode})';
+        final errorMessage =
+            errorData['message'] ??
+            errorData['error'] ??
+            'Failed to post to Bluesky (${response.statusCode})';
         final result = createFailureResult(
           postData.content,
           errorMessage,

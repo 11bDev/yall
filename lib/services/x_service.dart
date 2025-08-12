@@ -103,7 +103,7 @@ class XService extends SocialPlatformService {
       if (!isContentValid(postData.content)) {
         return createFailureResult(
           postData.content,
-          'Post too long (${postData.content.length}/${characterLimit} characters)',
+          'Post too long (${postData.content.length}/$characterLimit characters)',
           PostErrorType.contentTooLong,
         );
       }

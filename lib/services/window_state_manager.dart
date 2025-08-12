@@ -148,7 +148,7 @@ class WindowStateManager extends ChangeNotifier with WindowListener {
         adjustedWidth = preferredWidth;
         adjustedHeight = preferredHeight;
         debugPrint(
-          'Upgraded window size to preferred dimensions for better UX: ${preferredWidth}x${preferredHeight}',
+          'Upgraded window size to preferred dimensions for better UX: ${preferredWidth}x$preferredHeight',
         );
       }
     }
