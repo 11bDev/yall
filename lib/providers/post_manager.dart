@@ -291,6 +291,239 @@ class PostManager extends ChangeNotifier {
     }
   }
 
+  /// Publish content to selected platforms with multiple accounts per platform
+  ///
+  /// [postData] - The post data including content and media
+  /// [selectedPlatforms] - Set of platforms to post to
+  /// [selectedAccounts] - Map of platform to list of accounts for posting
+  ///
+  /// Returns a [PostResult] with the outcome for each account
+  Future<PostResult> publishToMultipleAccounts(
+    PostData postData,
+    Set<PlatformType> selectedPlatforms,
+    Map<PlatformType, List<Account>> selectedAccounts,
+  ) async {
+    if (_isPosting) {
+      throw PostManagerException('A posting operation is already in progress');
+    }
+
+    final startTime = DateTime.now();
+    _setPosting(true);
+    _clearError();
+    _cancellationCompleter = Completer<void>();
+
+    try {
+      // Initialize progress tracking
+      _progress = PostingProgress.preparing(selectedPlatforms);
+      notifyListeners();
+
+      // Validate inputs
+      if (!postData.isValid) {
+        throw PostManagerException(
+          'Post must have content or media attachments',
+        );
+      }
+
+      if (selectedPlatforms.isEmpty) {
+        throw PostManagerException('No platforms selected');
+      }
+
+      // Validate character limits for all selected platforms
+      final characterLimitValidation = validateCharacterLimits(
+        postData.content,
+        selectedPlatforms,
+      );
+      if (!characterLimitValidation.isValid) {
+        throw PostManagerException(characterLimitValidation.errorMessage!);
+      }
+
+      // Validate that we have accounts for all selected platforms
+      for (final platform in selectedPlatforms) {
+        if (!selectedAccounts.containsKey(platform) ||
+            selectedAccounts[platform]!.isEmpty) {
+          throw PostManagerException(
+            'No accounts selected for ${platform.displayName}',
+          );
+        }
+
+        final accounts = selectedAccounts[platform]!;
+        for (final account in accounts) {
+          if (account.platform != platform) {
+            throw PostManagerException(
+              'Account platform mismatch for ${platform.displayName}',
+            );
+          }
+
+          if (!account.isActive) {
+            throw PostManagerException(
+              'Account for ${platform.displayName} is not active',
+            );
+          }
+        }
+      }
+
+      // Update progress to posting state
+      _progress = PostingProgress.posting(selectedPlatforms, startTime);
+      notifyListeners();
+
+      // Create futures for parallel posting with progress tracking
+      final postingFutures = <Future<PostResult>>[];
+
+      for (final platform in selectedPlatforms) {
+        final accounts = selectedAccounts[platform]!;
+        final service = _platformServices[platform];
+
+        if (service == null) {
+          // Update progress for unsupported platform
+          _progress = _progress.updatePlatformStatus(
+            platform,
+            PlatformPostingStatus.failed(
+              platform,
+              'Platform service not available',
+              PostErrorType.platformUnavailable,
+            ),
+          );
+          notifyListeners();
+
+          // Create a failure result for unsupported platform
+          final failureResult = PostResult.empty(postData.content)
+              .addPlatformResult(
+                platform,
+                false,
+                error: 'Platform service not available',
+                errorType: PostErrorType.platformUnavailable,
+              );
+          postingFutures.add(Future.value(failureResult));
+          continue;
+        }
+
+        // Create posting futures for each account in this platform
+        for (final account in accounts) {
+          final postingFuture = _postToPlatform(
+            service,
+            postData,
+            account,
+            platform,
+          );
+          postingFutures.add(postingFuture);
+        }
+      }
+
+      // Wait for all posting operations to complete or cancellation
+      final results = await Future.any([
+        Future.wait(postingFutures),
+        _cancellationCompleter!.future.then(
+          (_) => throw PostManagerException('Posting cancelled'),
+        ),
+      ]);
+
+      // Check if operation was cancelled
+      if (_cancellationCompleter!.isCompleted) {
+        return PostResult.allFailed(
+          selectedPlatforms,
+          postData.content,
+          'Posting cancelled',
+          PostErrorType.unknownError,
+        );
+      }
+
+      // Combine all results into a single PostResult
+      // For multi-account platforms, we need to aggregate results properly
+      PostResult combinedResult = PostResult.empty(postData.content);
+      final Map<PlatformType, List<bool>> platformSuccesses = {};
+      final Map<PlatformType, List<String>> platformErrors = {};
+
+      // Collect all results per platform
+      for (final result in results) {
+        for (final entry in result.platformResults.entries) {
+          final platform = entry.key;
+          final success = entry.value;
+          final error = result.getError(platform);
+
+          platformSuccesses.putIfAbsent(platform, () => []).add(success);
+          if (error != null) {
+            platformErrors.putIfAbsent(platform, () => []).add(error);
+          }
+        }
+      }
+
+      // For each platform, determine overall success and combine errors
+      for (final platform in platformSuccesses.keys) {
+        final successes = platformSuccesses[platform]!;
+        final errors = platformErrors[platform] ?? [];
+
+        // Platform is successful if at least one account succeeded
+        final overallSuccess = successes.any((s) => s);
+
+        // Combine error messages if any failed
+        String? combinedError;
+        PostErrorType? errorType;
+        if (!overallSuccess || errors.isNotEmpty) {
+          if (overallSuccess && errors.isNotEmpty) {
+            // Some accounts succeeded, some failed
+            combinedError = 'Partial success: ${errors.join('; ')}';
+            errorType = PostErrorType.unknownError;
+          } else {
+            // All accounts failed
+            combinedError = errors.isNotEmpty
+                ? errors.join('; ')
+                : 'Unknown error';
+            errorType = PostErrorType.unknownError;
+          }
+        }
+
+        combinedResult = combinedResult.addPlatformResult(
+          platform,
+          overallSuccess,
+          error: combinedError,
+          errorType: errorType,
+        );
+      }
+
+      // Update progress to completed state
+      _progress = PostingProgress.completed(combinedResult, startTime);
+      _lastPostResult = combinedResult;
+      notifyListeners();
+
+      return combinedResult;
+    } catch (e) {
+      final errorMessage = e is PostManagerException
+          ? e.message
+          : 'Failed to publish post: ${e.toString()}';
+      _setError(errorMessage);
+
+      // Update progress to failed state
+      if (errorMessage == 'Posting cancelled') {
+        _progress = PostingProgress.cancelled(selectedPlatforms, startTime);
+      } else {
+        _progress = PostingProgress.failed(
+          selectedPlatforms,
+          errorMessage,
+          startTime,
+        );
+      }
+
+      // Create a failure result for all platforms
+      final failureResult = PostResult.allFailed(
+        selectedPlatforms,
+        postData.content,
+        errorMessage,
+        PostErrorType.unknownError,
+      );
+
+      _lastPostResult = failureResult;
+      notifyListeners();
+
+      if (e is PostManagerException) {
+        rethrow;
+      }
+      throw PostManagerException(errorMessage, e);
+    } finally {
+      _setPosting(false);
+      _cancellationCompleter = null;
+    }
+  }
+
   /// Post to a single platform with progress tracking
   Future<PostResult> _postToPlatform(
     SocialPlatformService service,

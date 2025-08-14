@@ -368,7 +368,7 @@ class NostrService extends SocialPlatformService {
 
     // Validate private key format
     if (rawPrivateKey == null) return false;
-    
+
     try {
       final hexKey = _convertToHex(rawPrivateKey);
       if (!_isValidPrivateKey(hexKey)) return false;
@@ -410,20 +410,21 @@ class NostrService extends SocialPlatformService {
     final domainParams = ECDomainParameters('secp256k1');
 
     // Create private key
-    final privateKey = ECPrivateKey(
-      BigInt.parse(HEX.encode(privateKeyBytes), radix: 16),
-      domainParams,
-    );
+    final privateKeyInt = BigInt.parse(HEX.encode(privateKeyBytes), radix: 16);
 
     // Calculate public key point
-    final publicKeyPoint = domainParams.G * privateKey.d!;
+    final publicKeyPoint = domainParams.G * privateKeyInt;
 
-    // BIP-340: Use x-coordinate only, ensure it represents even y
-    final xCoordinate = publicKeyPoint!.x!.toBigInteger()!;
+    // BIP-340: Use x-coordinate only with even y-coordinate
+    var xCoordinate = publicKeyPoint!.x!.toBigInteger()!;
+    final yCoordinate = publicKeyPoint.y!.toBigInteger()!;
 
-    // For BIP-340, we need the x-coordinate of the point with even y
-    // If y is odd, we don't negate (that's only for signing), we just use x as is
-    // since Nostr public keys are just the x-coordinate
+    // If y is odd, we need to use the negated private key to get even y
+    if (yCoordinate.isOdd) {
+      final negatedPrivateKey = domainParams.n - privateKeyInt;
+      final negatedPublicKeyPoint = domainParams.G * negatedPrivateKey;
+      xCoordinate = negatedPublicKeyPoint!.x!.toBigInteger()!;
+    }
 
     return xCoordinate.toRadixString(16).padLeft(64, '0');
   }
@@ -509,22 +510,16 @@ class NostrService extends SocialPlatformService {
     );
 
     // BIP-340 Schnorr signature implementation
+    // Generate deterministic nonce using tagged hash approach
+    final taggedHash = _taggedHash("BIP0340/nonce", [
+      _bigIntToBytes(privateKeyInt, 32),
+      eventIdBytes,
+    ]);
 
-    // Generate deterministic nonce k
-    final auxBytes = Uint8List(32);
-    for (int i = 0; i < 32; i++) {
-      auxBytes[i] = _random.nextInt(256);
+    var k = BigInt.parse(HEX.encode(taggedHash), radix: 16) % domainParams.n;
+    if (k == BigInt.zero) {
+      k = BigInt.one;
     }
-
-    // Create nonce using BIP-340 method: k = H(d || aux) where d is private key
-    final nonceInput = <int>[];
-    nonceInput.addAll(HEX.decode(privateKeyHex));
-    nonceInput.addAll(auxBytes);
-    final nonceHash = sha256.convert(nonceInput);
-    var k = BigInt.parse(HEX.encode(nonceHash.bytes), radix: 16);
-
-    // Ensure k is in valid range [1, n-1]
-    k = (k % (domainParams.n - BigInt.one)) + BigInt.one;
 
     // Calculate R = k * G
     var R = domainParams.G * k;
@@ -535,8 +530,7 @@ class NostrService extends SocialPlatformService {
       'Initial R: (${rX.toRadixString(16).substring(0, 16)}..., ${rY.toRadixString(16).substring(0, 16)}...)',
     );
 
-    // BIP-340 requirement: R.y must be even (quadratic residue)
-    // If R.y is odd, negate k and recalculate R
+    // BIP-340 requirement: R.y must be even
     if (rY.isOdd) {
       k = domainParams.n - k;
       R = domainParams.G * k;
@@ -547,34 +541,34 @@ class NostrService extends SocialPlatformService {
       );
     }
 
-    // Get public key point
+    // Get public key point and ensure it has even y
     final publicKeyPoint = domainParams.G * privateKeyInt;
-    final publicKeyX = publicKeyPoint!.x!.toBigInteger()!;
+    var publicKeyX = publicKeyPoint!.x!.toBigInteger()!;
+    final publicKeyY = publicKeyPoint.y!.toBigInteger()!;
+
+    // If public key y is odd, negate the private key
+    var effectivePrivateKey = privateKeyInt;
+    if (publicKeyY.isOdd) {
+      effectivePrivateKey = domainParams.n - privateKeyInt;
+      publicKeyX = (domainParams.G * effectivePrivateKey)!.x!.toBigInteger()!;
+    }
 
     print('Public key X: ${publicKeyX.toRadixString(16).substring(0, 16)}...');
 
-    // BIP-340 challenge: e = H("BIP0340/challenge" || R_x || P_x || m)
-    final challengeInput = <int>[];
+    // BIP-340 challenge: e = tagged_hash("BIP0340/challenge", R_x || P_x || m)
+    final challengeHash = _taggedHash("BIP0340/challenge", [
+      _bigIntToBytes(rX, 32),
+      _bigIntToBytes(publicKeyX, 32),
+      eventIdBytes,
+    ]);
 
-    // Add BIP-340 challenge tag
-    final challengeTag = utf8.encode("BIP0340/challenge");
-    final tagHash = sha256.convert(challengeTag);
-    challengeInput.addAll(tagHash.bytes);
-    challengeInput.addAll(tagHash.bytes);
-
-    challengeInput.addAll(_bigIntToBytes(rX, 32));
-    challengeInput.addAll(_bigIntToBytes(publicKeyX, 32));
-    challengeInput.addAll(eventIdBytes);
-
-    final challengeHash = sha256.convert(challengeInput);
     final e =
-        BigInt.parse(HEX.encode(challengeHash.bytes), radix: 16) %
-        domainParams.n;
+        BigInt.parse(HEX.encode(challengeHash), radix: 16) % domainParams.n;
 
     print('Challenge e: ${e.toRadixString(16).substring(0, 16)}...');
 
     // Calculate signature: s = k + e * d (mod n)
-    final s = (k + (e * privateKeyInt)) % domainParams.n;
+    final s = (k + (e * effectivePrivateKey)) % domainParams.n;
 
     print('Signature r (R.x): ${rX.toRadixString(16).substring(0, 16)}...');
     print('Signature s: ${s.toRadixString(16).substring(0, 16)}...');
@@ -590,6 +584,23 @@ class NostrService extends SocialPlatformService {
     print('Final signature length: ${finalSignature.length}');
 
     return finalSignature;
+  }
+
+  /// Create a tagged hash as specified in BIP-340
+  Uint8List _taggedHash(String tag, List<Uint8List> inputs) {
+    final tagBytes = utf8.encode(tag);
+    final tagHash = sha256.convert(tagBytes);
+
+    final combined = <int>[];
+    combined.addAll(tagHash.bytes);
+    combined.addAll(tagHash.bytes);
+
+    for (final input in inputs) {
+      combined.addAll(input);
+    }
+
+    final resultHash = sha256.convert(combined);
+    return Uint8List.fromList(resultHash.bytes);
   }
 
   /// Convert BigInt to byte array with specified length
@@ -765,13 +776,14 @@ class NostrService extends SocialPlatformService {
       RegExp(r'[^0-9a-f]'),
       '',
     );
-    
+
     // Validate hex key length
     if (hexKey.length != 64) {
       throw SocialPlatformException(
         platform: platformType,
         errorType: PostErrorType.invalidCredentials,
-        message: 'Private key must be exactly 64 hex characters, got ${hexKey.length}',
+        message:
+            'Private key must be exactly 64 hex characters, got ${hexKey.length}',
       );
     }
 
