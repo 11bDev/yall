@@ -12,7 +12,7 @@ import '../providers/post_manager.dart';
 import '../providers/account_manager.dart';
 import '../services/image_service.dart';
 import '../design_system/ubuntu_constants.dart';
-import 'platform_selector.dart';
+import 'multi_account_platform_selector.dart';
 import 'posting_progress_widget.dart';
 import 'media_attachment_widget.dart';
 
@@ -27,8 +27,8 @@ class PostingWidget extends StatefulWidget {
 class _PostingWidgetState extends State<PostingWidget> {
   final TextEditingController _textController = TextEditingController();
   final Set<PlatformType> _selectedPlatforms = <PlatformType>{};
-  final Map<PlatformType, Account?> _selectedAccounts =
-      <PlatformType, Account?>{};
+  final Map<PlatformType, List<Account>> _selectedAccounts =
+      <PlatformType, List<Account>>{};
   final List<MediaAttachment> _mediaAttachments = [];
   final ImageService _imageService = ImageService();
 
@@ -55,12 +55,14 @@ class _PostingWidgetState extends State<PostingWidget> {
     setState(() {
       if (selected) {
         _selectedPlatforms.add(platform);
-        // Set default account if available
+        // Initialize empty list for this platform
+        _selectedAccounts[platform] = [];
+        // Optionally select the first available account
         final accountManager = context.read<AccountManager>();
-        final defaultAccount = accountManager.getDefaultAccountForPlatform(
-          platform,
-        );
-        _selectedAccounts[platform] = defaultAccount;
+        final accounts = accountManager.getActiveAccountsForPlatform(platform);
+        if (accounts.isNotEmpty) {
+          _selectedAccounts[platform] = [accounts.first];
+        }
       } else {
         _selectedPlatforms.remove(platform);
         _selectedAccounts.remove(platform);
@@ -68,9 +70,19 @@ class _PostingWidgetState extends State<PostingWidget> {
     });
   }
 
-  void _onAccountSelected(PlatformType platform, Account? account) {
+  void _onAccountToggled(
+    PlatformType platform,
+    Account account,
+    bool selected,
+  ) {
     setState(() {
-      _selectedAccounts[platform] = account;
+      final accounts = _selectedAccounts[platform] ?? [];
+      if (selected && !accounts.contains(account)) {
+        accounts.add(account);
+      } else if (!selected) {
+        accounts.remove(account);
+      }
+      _selectedAccounts[platform] = accounts;
     });
   }
 
@@ -124,17 +136,17 @@ class _PostingWidgetState extends State<PostingWidget> {
 
     // Filter out platforms without selected accounts
     final validPlatforms = _selectedPlatforms.where((platform) {
-      return _selectedAccounts[platform] != null;
+      return _selectedAccounts[platform]?.isNotEmpty == true;
     }).toSet();
 
-    final validAccounts = Map<PlatformType, Account>.fromEntries(
+    final validAccounts = Map<PlatformType, List<Account>>.fromEntries(
       validPlatforms.map(
         (platform) => MapEntry(platform, _selectedAccounts[platform]!),
       ),
     );
 
     try {
-      final result = await postManager.publishToSelectedPlatforms(
+      final result = await postManager.publishToMultipleAccounts(
         postData,
         validPlatforms,
         validAccounts,
@@ -241,7 +253,7 @@ class _PostingWidgetState extends State<PostingWidget> {
             postData.isValid &&
             _selectedPlatforms.isNotEmpty &&
             _selectedPlatforms.every(
-              (platform) => _selectedAccounts[platform] != null,
+              (platform) => _selectedAccounts[platform]?.isNotEmpty == true,
             ) &&
             !postManager.isPosting;
 
@@ -317,12 +329,12 @@ class _PostingWidgetState extends State<PostingWidget> {
 
               const SizedBox(height: 16),
 
-              // Platform selection
-              PlatformSelector(
+              // Platform and account selection
+              MultiAccountPlatformSelector(
                 selectedPlatforms: _selectedPlatforms,
                 selectedAccounts: _selectedAccounts,
                 onPlatformToggled: _onPlatformToggled,
-                onAccountSelected: _onAccountSelected,
+                onAccountToggled: _onAccountToggled,
                 enabled: !postManager.isPosting,
                 initiallyExpanded: _selectedPlatforms.isNotEmpty,
               ),

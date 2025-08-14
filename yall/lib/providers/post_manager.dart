@@ -98,6 +98,29 @@ class PostManager extends ChangeNotifier {
     Set<PlatformType> selectedPlatforms,
     Map<PlatformType, Account> selectedAccounts,
   ) async {
+    // Convert single accounts to lists for compatibility
+    final accountsAsList = selectedAccounts.map(
+      (platform, account) => MapEntry(platform, [account]),
+    );
+    return publishToMultipleAccounts(
+      content,
+      selectedPlatforms,
+      accountsAsList,
+    );
+  }
+
+  /// Publish content to selected platforms with multiple accounts per platform
+  ///
+  /// [content] - The text content to post
+  /// [selectedPlatforms] - Set of platforms to post to
+  /// [selectedAccounts] - Map of platform to list of accounts for posting
+  ///
+  /// Returns a [PostResult] with the outcome for each account
+  Future<PostResult> publishToMultipleAccounts(
+    String content,
+    Set<PlatformType> selectedPlatforms,
+    Map<PlatformType, List<Account>> selectedAccounts,
+  ) async {
     if (_isPosting) {
       throw PostManagerException('A posting operation is already in progress');
     }
@@ -132,23 +155,26 @@ class PostManager extends ChangeNotifier {
 
       // Validate that we have accounts for all selected platforms
       for (final platform in selectedPlatforms) {
-        if (!selectedAccounts.containsKey(platform)) {
+        if (!selectedAccounts.containsKey(platform) ||
+            selectedAccounts[platform]!.isEmpty) {
           throw PostManagerException(
-            'No account selected for ${platform.displayName}',
+            'No accounts selected for ${platform.displayName}',
           );
         }
 
-        final account = selectedAccounts[platform]!;
-        if (account.platform != platform) {
-          throw PostManagerException(
-            'Account platform mismatch for ${platform.displayName}',
-          );
-        }
+        final accounts = selectedAccounts[platform]!;
+        for (final account in accounts) {
+          if (account.platform != platform) {
+            throw PostManagerException(
+              'Account platform mismatch for ${platform.displayName}',
+            );
+          }
 
-        if (!account.isActive) {
-          throw PostManagerException(
-            'Account for ${platform.displayName} is not active',
-          );
+          if (!account.isActive) {
+            throw PostManagerException(
+              'Account for ${platform.displayName} is not active',
+            );
+          }
         }
       }
 
@@ -158,10 +184,9 @@ class PostManager extends ChangeNotifier {
 
       // Create futures for parallel posting with progress tracking
       final postingFutures = <Future<PostResult>>[];
-      final platformList = selectedPlatforms.toList();
 
-      for (final platform in platformList) {
-        final account = selectedAccounts[platform]!;
+      for (final platform in selectedPlatforms) {
+        final accounts = selectedAccounts[platform]!;
         final service = _platformServices[platform];
 
         if (service == null) {
@@ -187,14 +212,16 @@ class PostManager extends ChangeNotifier {
           continue;
         }
 
-        // Create posting future with progress tracking
-        final postingFuture = _postToPlatform(
-          service,
-          content,
-          account,
-          platform,
-        );
-        postingFutures.add(postingFuture);
+        // Create posting futures for each account in this platform
+        for (final account in accounts) {
+          final postingFuture = _postToPlatform(
+            service,
+            content,
+            account,
+            platform,
+          );
+          postingFutures.add(postingFuture);
+        }
       }
 
       // Wait for all posting operations to complete or cancellation
