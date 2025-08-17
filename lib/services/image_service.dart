@@ -10,20 +10,22 @@ import '../models/media_attachment.dart';
 class ImageService {
   /// Maximum file size in bytes (10MB)
   static const int maxFileSize = 10 * 1024 * 1024;
-  
+
   /// Maximum image dimensions
   static const int maxImageWidth = 2048;
   static const int maxImageHeight = 2048;
-  
+
   /// Supported image formats
   static const List<String> supportedImageExtensions = [
-    'jpg', 'jpeg', 'png', 'gif', 'webp'
+    'jpg',
+    'jpeg',
+    'png',
+    'gif',
+    'webp',
   ];
-  
+
   /// Supported video formats
-  static const List<String> supportedVideoExtensions = [
-    'mp4', 'mov', 'avi'
-  ];
+  static const List<String> supportedVideoExtensions = ['mp4', 'mov', 'avi'];
 
   /// Pick images from the file system
   Future<List<MediaAttachment>> pickImages({
@@ -33,7 +35,7 @@ class ImageService {
     try {
       // Try different file picker approaches for better Linux compatibility
       FilePickerResult? result;
-      
+
       try {
         result = await FilePicker.platform.pickFiles(
           type: FileType.custom,
@@ -66,26 +68,28 @@ class ImageService {
       }
 
       final attachments = <MediaAttachment>[];
-      final filesToProcess = maxFiles != null 
+      final filesToProcess = maxFiles != null
           ? result.files.take(maxFiles).toList()
           : result.files;
 
       for (final platformFile in filesToProcess) {
         if (platformFile.path == null) continue;
-        
+
         final file = File(platformFile.path!);
-        
+
         // Check if it's actually an image file by extension
         final extension = path.extension(file.path).toLowerCase().substring(1);
         if (!supportedImageExtensions.contains(extension)) {
           print('Skipping non-image file: ${file.path}');
           continue;
         }
-        
+
         // Validate file
         final validation = await validateImageFile(file);
         if (!validation.isValid) {
-          print('File validation failed for ${file.path}: ${validation.errorMessage}');
+          print(
+            'File validation failed for ${file.path}: ${validation.errorMessage}',
+          );
           continue; // Skip invalid files instead of throwing
         }
 
@@ -99,17 +103,19 @@ class ImageService {
       if (e is ImageServiceException) {
         rethrow;
       }
-      
+
       // Provide more helpful error messages
       String errorMessage = 'Failed to pick images';
       if (e.toString().contains('zenity')) {
-        errorMessage = 'File picker not available. Please install zenity: sudo apt install zenity';
+        errorMessage =
+            'File picker not available. Please install zenity: sudo apt install zenity';
       } else if (e.toString().contains('No such file')) {
-        errorMessage = 'File picker utility not found. Please install required system packages.';
+        errorMessage =
+            'File picker utility not found. Please install required system packages.';
       } else {
         errorMessage = 'Failed to pick images: ${e.toString()}';
       }
-      
+
       throw ImageServiceException(errorMessage);
     }
   }
@@ -132,15 +138,15 @@ class ImageService {
       }
 
       final attachments = <MediaAttachment>[];
-      final filesToProcess = maxFiles != null 
+      final filesToProcess = maxFiles != null
           ? result.files.take(maxFiles).toList()
           : result.files;
 
       for (final platformFile in filesToProcess) {
         if (platformFile.path == null) continue;
-        
+
         final file = File(platformFile.path!);
-        
+
         // Validate file
         final validation = await validateVideoFile(file);
         if (!validation.isValid) {
@@ -169,7 +175,10 @@ class ImageService {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: [...supportedImageExtensions, ...supportedVideoExtensions],
+        allowedExtensions: [
+          ...supportedImageExtensions,
+          ...supportedVideoExtensions,
+        ],
         allowMultiple: allowMultiple,
         withData: false,
       );
@@ -179,16 +188,16 @@ class ImageService {
       }
 
       final attachments = <MediaAttachment>[];
-      final filesToProcess = maxFiles != null 
+      final filesToProcess = maxFiles != null
           ? result.files.take(maxFiles).toList()
           : result.files;
 
       for (final platformFile in filesToProcess) {
         if (platformFile.path == null) continue;
-        
+
         final file = File(platformFile.path!);
         final extension = path.extension(file.path).toLowerCase().substring(1);
-        
+
         // Validate file based on type
         FileValidationResult validation;
         if (supportedImageExtensions.contains(extension)) {
@@ -236,7 +245,8 @@ class ImageService {
       if (fileSize > maxFileSize) {
         return FileValidationResult(
           isValid: false,
-          errorMessage: 'File size exceeds ${(maxFileSize / (1024 * 1024)).toStringAsFixed(1)}MB limit',
+          errorMessage:
+              'File size exceeds ${(maxFileSize / (1024 * 1024)).toStringAsFixed(1)}MB limit',
         );
       }
 
@@ -291,7 +301,8 @@ class ImageService {
       if (fileSize > maxFileSize) {
         return FileValidationResult(
           isValid: false,
-          errorMessage: 'File size exceeds ${(maxFileSize / (1024 * 1024)).toStringAsFixed(1)}MB limit',
+          errorMessage:
+              'File size exceeds ${(maxFileSize / (1024 * 1024)).toStringAsFixed(1)}MB limit',
         );
       }
 
@@ -359,7 +370,7 @@ class ImageService {
     try {
       final image = img.decodeImage(imageBytes);
       if (image == null) return null;
-      
+
       return ImageDimensions(width: image.width, height: image.height);
     } catch (e) {
       return null;
@@ -402,7 +413,80 @@ class ImageService {
       final thumbnailBytes = img.encodeJpg(thumbnail, quality: 70);
       return Uint8List.fromList(thumbnailBytes);
     } catch (e) {
-      throw ImageServiceException('Failed to generate thumbnail: ${e.toString()}');
+      throw ImageServiceException(
+        'Failed to generate thumbnail: ${e.toString()}',
+      );
+    }
+  }
+
+  /// Compress an image to fit within a specific file size limit
+  /// Uses progressive quality reduction and resizing if needed
+  Future<Uint8List> compressImageToSize(
+    Uint8List imageBytes, 
+    int maxSizeBytes,
+  ) async {
+    try {
+      // If already within size limit, return as-is
+      if (imageBytes.length <= maxSizeBytes) {
+        return imageBytes;
+      }
+
+      final image = img.decodeImage(imageBytes);
+      if (image == null) {
+        throw ImageServiceException('Failed to decode image for compression');
+      }
+
+      // Start with high quality and progressively reduce
+      for (int quality = 90; quality >= 30; quality -= 10) {
+        final compressedBytes = img.encodeJpg(image, quality: quality);
+        final compressedData = Uint8List.fromList(compressedBytes);
+        
+        if (compressedData.length <= maxSizeBytes) {
+          return compressedData;
+        }
+      }
+
+      // If quality reduction isn't enough, try resizing
+      var currentImage = image;
+      double scaleFactor = 0.9;
+      
+      while (scaleFactor > 0.3) {
+        final newWidth = (currentImage.width * scaleFactor).round();
+        final newHeight = (currentImage.height * scaleFactor).round();
+        
+        final resizedImage = img.copyResize(
+          currentImage,
+          width: newWidth,
+          height: newHeight,
+          interpolation: img.Interpolation.linear,
+        );
+        
+        // Try different quality levels for the resized image
+        for (int quality = 85; quality >= 30; quality -= 15) {
+          final compressedBytes = img.encodeJpg(resizedImage, quality: quality);
+          final compressedData = Uint8List.fromList(compressedBytes);
+          
+          if (compressedData.length <= maxSizeBytes) {
+            return compressedData;
+          }
+        }
+        
+        scaleFactor -= 0.1;
+      }
+
+      // If we still can't fit it, return the smallest version we can make
+      final minResized = img.copyResize(
+        image,
+        width: (image.width * 0.3).round(),
+        height: (image.height * 0.3).round(),
+        interpolation: img.Interpolation.linear,
+      );
+      
+      final finalBytes = img.encodeJpg(minResized, quality: 30);
+      return Uint8List.fromList(finalBytes);
+      
+    } catch (e) {
+      throw ImageServiceException('Failed to compress image: ${e.toString()}');
     }
   }
 }
@@ -412,10 +496,7 @@ class FileValidationResult {
   final bool isValid;
   final String? errorMessage;
 
-  FileValidationResult({
-    required this.isValid,
-    this.errorMessage,
-  });
+  FileValidationResult({required this.isValid, this.errorMessage});
 }
 
 /// Image dimensions

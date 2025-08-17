@@ -8,11 +8,13 @@ import '../models/platform_type.dart';
 import '../models/post_data.dart';
 import 'error_handler.dart';
 import 'social_platform_service.dart';
+import 'image_service.dart';
 
 /// Service for interacting with Bluesky via AT Protocol
 class BlueskyService extends SocialPlatformService {
   final http.Client _httpClient;
   final ErrorHandler _errorHandler = ErrorHandler();
+  final ImageService _imageService = ImageService();
   static const String _defaultPdsUrl = 'https://bsky.social';
 
   BlueskyService({http.Client? httpClient})
@@ -20,6 +22,18 @@ class BlueskyService extends SocialPlatformService {
 
   @override
   PlatformType get platformType => PlatformType.bluesky;
+
+  @override
+  bool get supportsMediaUploads => true;
+
+  @override
+  int get maxMediaAttachments => 4;
+
+  @override
+  int get maxMediaFileSize => 1024 * 1024; // 1MB limit for Bluesky
+
+  @override
+  List<String> get supportedMediaTypes => ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
   @override
   List<String> get requiredCredentialFields => ['identifier', 'password'];
@@ -157,14 +171,23 @@ class BlueskyService extends SocialPlatformService {
       List<Map<String, dynamic>> embedImages = [];
       for (final attachment in postData.mediaAttachments) {
         try {
-          // Upload image as blob
+          // Get image bytes
+          final originalBytes = attachment.bytes ?? await attachment.file!.readAsBytes();
+          
+          // Compress image to fit within Bluesky's 1MB limit if needed
+          final compressedBytes = await _imageService.compressImageToSize(
+            originalBytes,
+            maxMediaFileSize,
+          );
+          
+          // Upload compressed image as blob
           final blobResponse = await _httpClient.post(
             Uri.parse('$pdsUrl/xrpc/com.atproto.repo.uploadBlob'),
             headers: {
               'Authorization': 'Bearer $accessJwt',
               'Content-Type': attachment.mimeType,
             },
-            body: attachment.bytes ?? await attachment.file!.readAsBytes(),
+            body: compressedBytes,
           );
           if (blobResponse.statusCode == 200) {
             final blobData = jsonDecode(blobResponse.body);
