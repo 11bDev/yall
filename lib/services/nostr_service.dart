@@ -8,10 +8,13 @@ import 'package:pointycastle/export.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as status;
 import 'package:bech32/bech32.dart';
+import 'package:http/http.dart' as http;
 
 import '../models/account.dart';
 import '../models/post_result.dart';
 import '../models/platform_type.dart';
+import '../models/post_data.dart';
+import '../models/media_attachment.dart';
 import 'error_handler.dart';
 import 'social_platform_service.dart';
 
@@ -44,6 +47,7 @@ class NostrService extends SocialPlatformService {
   static const List<String> optionalCredentialFields = [
     'public_key',
     'display_name',
+    'blossom_server', // Blossom server URL for image uploads
   ];
 
   /// Default Nostr relays to use if none are specified
@@ -900,5 +904,251 @@ class NostrService extends SocialPlatformService {
     }
 
     return ret;
+  }
+
+  // === Blossom Media Upload Support ===
+
+  @override
+  bool get supportsMediaUploads => true;
+
+  @override
+  int get maxMediaAttachments => 4; // Reasonable limit for Nostr
+
+  @override
+  int get maxMediaFileSize => 10 * 1024 * 1024; // 10MB
+
+  @override
+  List<String> get supportedMediaTypes => [
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+    'image/gif',
+  ];
+
+  @override
+  Future<PostResult> publishPostWithMedia(PostData postData, Account account) async {
+    try {
+      // Validate account has blossom server configured
+      final blossomServer = account.getCredential<String>('blossom_server');
+      if (blossomServer == null || blossomServer.isEmpty) {
+        return createFailureResult(
+          postData.content,
+          'Blossom server not configured. Please add a Blossom server URL to enable image uploads.',
+          PostErrorType.platformUnavailable,
+        );
+      }
+
+      // Upload images to Blossom server first
+      final imageUrls = <String>[];
+      for (final attachment in postData.mediaAttachments) {
+        if (attachment.type == MediaType.image) {
+          try {
+            final imageUrl = await _uploadToBlossom(attachment, account, blossomServer);
+            imageUrls.add(imageUrl);
+          } catch (e) {
+            return createFailureResult(
+              postData.content,
+              'Failed to upload image: ${e.toString()}',
+              PostErrorType.serverError,
+            );
+          }
+        }
+      }
+
+      // Create content with image URLs
+      final contentWithImages = _formatContentWithImages(postData.content, imageUrls);
+
+      // Post to Nostr with image URLs
+      return await publishPost(contentWithImages, account);
+    } catch (e, stackTrace) {
+      final result = handleError(postData.content, e);
+      _errorHandler.logError(
+        'Nostr post with media unexpected error',
+        e,
+        stackTrace: stackTrace,
+        context: {'account_id': account.id},
+        platform: platformType,
+      );
+      return result;
+    }
+  }
+
+  /// Get MIME type from file extension
+  String _getMimeType(String fileName) {
+    final extension = fileName.toLowerCase().split('.').last;
+    switch (extension) {
+      case 'png':
+        return 'image/png';
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'gif':
+        return 'image/gif';
+      case 'webp':
+        return 'image/webp';
+      case 'svg':
+        return 'image/svg+xml';
+      case 'bmp':
+        return 'image/bmp';
+      case 'ico':
+        return 'image/x-icon';
+      case 'pdf':
+        return 'application/pdf';
+      case 'txt':
+        return 'text/plain';
+      case 'json':
+        return 'application/json';
+      case 'mp4':
+        return 'video/mp4';
+      case 'mp3':
+        return 'audio/mpeg';
+      case 'wav':
+        return 'audio/wav';
+      default:
+        return 'application/octet-stream';
+    }
+  }
+
+  /// Upload image to Blossom server
+  Future<String> _uploadToBlossom(MediaAttachment attachment, Account account, String blossomServer) async {
+    final privateKey = account.getCredential<String>('private_key')!;
+    final privateKeyHex = _convertToHex(privateKey);
+
+    // Prepare file data
+    Uint8List fileBytes;
+    if (attachment.file != null) {
+      fileBytes = await attachment.file!.readAsBytes();
+    } else if (attachment.bytes != null) {
+      fileBytes = attachment.bytes!;
+    } else {
+      throw Exception('No file data available for upload');
+    }
+
+    // Create authorization header for Blossom
+    final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    
+    // Normalize the Blossom server URL (remove trailing slash)
+    final normalizedBlossomServer = blossomServer.endsWith('/') 
+        ? blossomServer.substring(0, blossomServer.length - 1)
+        : blossomServer;
+        
+    final authEvent = _createBlossomAuthEvent(
+      normalizedBlossomServer,
+      attachment.fileName,
+      fileBytes.length,
+      timestamp,
+      privateKeyHex,
+      fileBytes, // Add file bytes parameter
+    );
+
+    // Prepare upload URL - ensure no double slashes
+    final uploadUrl = Uri.parse('$normalizedBlossomServer/upload');
+    
+    // Debug logging
+    print('Uploading to Blossom server: $normalizedBlossomServer');
+    print('Upload URL: $uploadUrl');
+
+    // Detect proper MIME type from file extension
+    final mimeType = _getMimeType(attachment.fileName);
+    
+    print('File: ${attachment.fileName}, detected MIME type: $mimeType');
+    
+    // Create multipart request - Blossom uses PUT method
+    final request = http.Request('PUT', uploadUrl);
+    request.headers['Authorization'] = 'Nostr ${base64Encode(utf8.encode(jsonEncode(authEvent)))}';
+    request.headers['Content-Type'] = mimeType;
+    request.headers['Content-Length'] = fileBytes.length.toString();
+    
+    // Debug authorization header
+    print('Authorization header: ${request.headers['Authorization']}');
+    print('Auth event: ${jsonEncode(authEvent)}');
+    
+    // Set body as raw bytes
+    request.bodyBytes = fileBytes;
+
+    // Send request
+    final response = await request.send();
+    
+    print('Blossom upload response status: ${response.statusCode}');
+    
+    if (response.statusCode == 200) {
+      final responseBody = await response.stream.bytesToString();
+      print('Blossom upload success response: $responseBody');
+      final responseData = jsonDecode(responseBody);
+      
+      // Blossom returns the file URL
+      if (responseData['url'] != null) {
+        return responseData['url'];
+      } else {
+        throw Exception('No URL returned from Blossom server');
+      }
+    } else {
+      final errorBody = await response.stream.bytesToString();
+      print('Blossom upload error response: $errorBody');
+      throw Exception('Blossom upload failed: ${response.statusCode} - $errorBody');
+    }
+  }
+
+  /// Create Blossom authorization event (NIP-98)
+  Map<String, dynamic> _createBlossomAuthEvent(
+    String blossomServer,
+    String fileName,
+    int fileSize,
+    int timestamp,
+    String privateKeyHex,
+    Uint8List fileBytes, // Add file bytes parameter
+  ) {
+    final publicKeyHex = _getPublicKeyFromPrivate(privateKeyHex);
+    
+    // Calculate SHA256 of file content for payload
+    final fileHash = sha256.convert(fileBytes).toString();
+    
+    // Calculate expiration time (1 hour from now)
+    final expiration = timestamp + 3600; // 1 hour = 3600 seconds
+    
+    // Create auth event for Blossom upload (based on NIP-98)
+    final event = {
+      'kind': 24242, // Blossom-specific upload authorization kind
+      'created_at': timestamp,
+      'tags': [
+        ['t', 'upload'], // Action tag for Blossom upload
+        ['x', fileHash], // SHA256 hash of the file being uploaded
+        ['expiration', expiration.toString()], // Add expiration tag
+      ],
+      'content': 'Upload image to Blossom server', // Human readable description
+      'pubkey': publicKeyHex,
+    };
+
+    // Sign the event
+    final eventId = _calculateEventId(event);
+    final signature = _signEvent(eventId, privateKeyHex);
+
+    event['id'] = eventId;
+    event['sig'] = signature;
+
+    return event;
+  }
+
+  /// Format content with image URLs
+  String _formatContentWithImages(String content, List<String> imageUrls) {
+    if (imageUrls.isEmpty) return content;
+    
+    final buffer = StringBuffer(content);
+    
+    // Add images at the end
+    for (final imageUrl in imageUrls) {
+      if (buffer.isNotEmpty && !buffer.toString().endsWith('\n')) {
+        buffer.write('\n');
+      }
+      buffer.write(imageUrl);
+    }
+    
+    return buffer.toString();
+  }
+
+  /// Check if account has Blossom server configured and media uploads are available
+  bool hasBlossomSupport(Account account) {
+    final blossomServer = account.getCredential<String>('blossom_server');
+    return blossomServer != null && blossomServer.isNotEmpty;
   }
 }

@@ -53,6 +53,11 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
     for (final field in requiredFields) {
       _credentialControllers[field] = TextEditingController();
     }
+    
+    // Add optional fields for Nostr
+    if (widget.platform == PlatformType.nostr) {
+      _credentialControllers['blossom_server'] = TextEditingController();
+    }
   }
 
   List<String> _getRequiredCredentialFields(PlatformType platform) {
@@ -271,6 +276,27 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
             return null;
           },
         ),
+        const SizedBox(height: 12),
+
+        // Blossom server field (optional)
+        TextFormField(
+          controller: _credentialControllers['blossom_server'],
+          decoration: const InputDecoration(
+            labelText: 'Blossom Server (Optional)',
+            hintText: 'https://blossom.server.com',
+            prefixIcon: Icon(Icons.cloud_upload),
+            helperText:
+                'Blossom server for image uploads (leave empty to disable image posting)',
+          ),
+          validator: (value) {
+            if (value != null && value.isNotEmpty) {
+              if (!value.startsWith('http://') && !value.startsWith('https://')) {
+                return 'Blossom server URL must start with http:// or https://';
+              }
+            }
+            return null;
+          },
+        ),
       ],
     );
   }
@@ -331,6 +357,8 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
         return 'App Password';
       case 'private_key':
         return 'Private Key';
+      case 'blossom_server':
+        return 'Blossom Server (Optional)';
       default:
         return fieldName
             .replaceAll('_', ' ')
@@ -358,6 +386,8 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
         return 'Generated app password from Bluesky';
       case 'private_key':
         return 'Your Nostr private key (64 hex chars or nsec1... format)';
+      case 'blossom_server':
+        return 'https://blossom.example.com (optional - for image uploads)';
       default:
         return 'Enter your ${_getFieldLabel(fieldName).toLowerCase()}';
     }
@@ -379,6 +409,8 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
         return Icons.account_circle;
       case 'private_key':
         return Icons.vpn_key;
+      case 'blossom_server':
+        return Icons.cloud_upload;
       default:
         return Icons.text_fields;
     }
@@ -433,6 +465,18 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
       case 'api_secret':
         if (value.trim().length < 20) {
           return 'API secret appears too short';
+        }
+        break;
+      case 'blossom_server':
+        // Optional field, only validate if provided
+        if (value.isNotEmpty) {
+          final uri = Uri.tryParse(value);
+          if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
+            return 'Please enter a valid URL (e.g., https://blossom.example.com)';
+          }
+          if (!uri.scheme.startsWith('http')) {
+            return 'URL must start with http:// or https://';
+          }
         }
         break;
     }
