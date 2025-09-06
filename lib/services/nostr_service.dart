@@ -34,6 +34,20 @@ class NostrService extends SocialPlatformService {
   @override
   List<String> get requiredCredentialFields => ['private_key'];
 
+  /// Get required fields based on signer type
+  static List<String> getRequiredFieldsForSignerType(String signerType) {
+    switch (signerType) {
+      case 'local':
+        return ['private_key'];
+      case 'remote':
+        return ['remote_pubkey', 'relay_url'];
+      case 'bunker':
+        return ['bunker_url'];
+      default:
+        return ['private_key'];
+    }
+  }
+
   /// Current relays being used
   List<String> get relays => _relays;
 
@@ -48,6 +62,11 @@ class NostrService extends SocialPlatformService {
     'public_key',
     'display_name',
     'blossom_server', // Blossom server URL for image uploads
+    'signer_type', // local, remote, or bunker
+    'remote_pubkey', // For remote signer
+    'relay_url', // For remote signer relay
+    'bunker_url', // For NIP-46 bunker
+    'bunker_secret', // Optional bunker secret
   ];
 
   /// Default Nostr relays to use if none are specified
@@ -725,6 +744,29 @@ class NostrService extends SocialPlatformService {
 
     try {
       HEX.decode(privateKey);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Validate public key format (supports both npub and hex formats)
+  static bool isValidPublicKey(String publicKey) {
+    // Handle npub format (bech32 encoded)
+    if (publicKey.startsWith('npub')) {
+      try {
+        final decoded = bech32.decode(publicKey);
+        return decoded.hrp == 'npub' && decoded.data.length == 52;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    // Handle hex format (64 characters)
+    if (publicKey.length != 64) return false;
+
+    try {
+      HEX.decode(publicKey);
       return true;
     } catch (e) {
       return false;

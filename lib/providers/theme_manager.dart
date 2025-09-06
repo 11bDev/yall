@@ -34,98 +34,166 @@ class ThemeManager extends ChangeNotifier {
   /// Whether the theme manager has been initialized
   bool get isInitialized => _isInitialized;
 
-  /// Light theme data with Material Design 3
+  /// Light theme data with Windows Fluent Design
   ThemeData get lightTheme {
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: const Color(0xFF0078D4), // Windows accent blue
+      brightness: Brightness.light,
+    );
+    
     return ThemeData.light().copyWith(
+      colorScheme: colorScheme,
+      useMaterial3: true,
       textTheme: ThemeData.light().textTheme.apply(fontFamily: 'Ubuntu'),
-      appBarTheme: ThemeData.light().appBarTheme.copyWith(
-        elevation: UbuntuElevation.none,
-        centerTitle: true,
-        backgroundColor: ThemeData.light().colorScheme.surface,
-        foregroundColor: ThemeData.light().colorScheme.onSurface,
-      ),
-      cardTheme: ThemeData.light().cardTheme.copyWith(
-        elevation: UbuntuElevation.low,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(UbuntuRadius.lg),
+      appBarTheme: AppBarTheme(
+        elevation: 0,
+        centerTitle: false,
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
+        surfaceTintColor: Colors.transparent,
+        titleTextStyle: ThemeData.light().textTheme.titleLarge?.copyWith(
+          fontFamily: 'Ubuntu',
+          fontWeight: FontWeight.w600,
+          color: colorScheme.onSurface,
         ),
+      ),
+      cardTheme: CardThemeData(
+        elevation: 1,
+        shadowColor: Colors.black12,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        color: colorScheme.surface,
+        surfaceTintColor: colorScheme.surfaceTint,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
+          elevation: 1,
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(UbuntuRadius.md),
+            borderRadius: BorderRadius.circular(8),
           ),
           padding: const EdgeInsets.symmetric(
-            horizontal: UbuntuSpacing.lg,
-            vertical: UbuntuSpacing.sm,
+            horizontal: 24,
+            vertical: 12,
+          ),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
           ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(UbuntuRadius.md),
-        ),
         filled: true,
-        fillColor: ThemeData.light().colorScheme.surfaceContainerHighest.withOpacity(
-          0.3,
+        fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: colorScheme.outline),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.5)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: UbuntuSpacing.md,
-          vertical: UbuntuSpacing.sm,
+          horizontal: 16,
+          vertical: 12,
         ),
       ),
-      checkboxTheme: CheckboxThemeData(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(UbuntuRadius.sm),
-        ),
+      dividerTheme: DividerThemeData(
+        color: colorScheme.outlineVariant,
+        thickness: 1,
       ),
     );
   }
 
-  /// Dark theme data with Material Design 3  
+  /// Dark theme data with Windows Fluent Design
   ThemeData get darkTheme {
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: const Color(0xFF0078D4), // Windows accent blue
+      brightness: Brightness.dark,
+    );
+    
     return ThemeData.dark().copyWith(
+      colorScheme: colorScheme,
+      useMaterial3: true,
       textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'Ubuntu'),
-      appBarTheme: ThemeData.dark().appBarTheme.copyWith(
-        elevation: UbuntuElevation.none,
-        centerTitle: true,
-        backgroundColor: ThemeData.dark().colorScheme.surface,
-        foregroundColor: ThemeData.dark().colorScheme.onSurface,
-      ),
-      cardTheme: ThemeData.dark().cardTheme.copyWith(
-        elevation: UbuntuElevation.low,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(UbuntuRadius.lg),
+      appBarTheme: AppBarTheme(
+        elevation: 0,
+        centerTitle: false,
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
+        surfaceTintColor: Colors.transparent,
+        titleTextStyle: ThemeData.dark().textTheme.titleLarge?.copyWith(
+          fontFamily: 'Ubuntu',
+          fontWeight: FontWeight.w600,
+          color: colorScheme.onSurface,
         ),
+      ),
+      cardTheme: CardThemeData(
+        elevation: 1,
+        shadowColor: Colors.black26,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        color: colorScheme.surface,
+        surfaceTintColor: colorScheme.surfaceTint,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
+          elevation: 1,
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(UbuntuRadius.md),
+            borderRadius: BorderRadius.circular(8),
           ),
           padding: const EdgeInsets.symmetric(
-            horizontal: UbuntuSpacing.lg,
-            vertical: UbuntuSpacing.sm,
+            horizontal: 24,
+            vertical: 12,
+          ),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
           ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(UbuntuRadius.md),
-        ),
         filled: true,
-        fillColor: ThemeData.dark().colorScheme.surfaceContainerHighest.withOpacity(
-          0.3,
+        fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: colorScheme.outline),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: colorScheme.outline.withOpacity(0.5)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: UbuntuSpacing.md,
-          vertical: UbuntuSpacing.sm,
+          horizontal: 16,
+          vertical: 12,
         ),
       ),
-      checkboxTheme: CheckboxThemeData(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(UbuntuRadius.sm),
-        ),
+      dividerTheme: DividerThemeData(
+        color: colorScheme.outlineVariant,
+        thickness: 1,
       ),
     );
   }

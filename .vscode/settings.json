@@ -1,3 +1,7 @@
 {
-    "kiroAgent.configureMCP": "Disabled"
+    "kiroAgent.configureMCP": "Disabled",
+    "debug.javascript.defaultRuntimeExecutable": {
+        "pwa-node": "c:\\users\\timap\\appdata\\local\\mise\\shims\\node"
+    },
+    "python.defaultInterpreterPath": "C:\\Users\\timap\\AppData\\Local\\mise\\installs\\python\\3.13.7\\python.exe"
 }

@@ -14,6 +14,7 @@ import 'services/system_tray_manager.dart';
 import 'services/window_state_manager.dart';
 import 'services/floating_window_manager.dart';
 import 'widgets/posting_widget.dart';
+import 'widgets/windows_main_layout.dart';
 import 'widgets/settings_window.dart';
 
 // Intent classes for keyboard shortcuts
@@ -48,11 +49,11 @@ void main() async {
   if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
     await windowManager.ensureInitialized();
 
-    // Set window options for floating window (optimized for COSMIC)
+    // Set window options for beautiful Windows experience
     WindowOptions windowOptions = const WindowOptions(
-      size: Size(650, 750), // Larger size to fit all UI elements comfortably
-      minimumSize: Size(500, 600), // Increased minimum to ensure usability
-      maximumSize: Size(800, 900), // Increased maximum size
+      size: Size(760, 575), // Optimized for Windows
+      minimumSize: Size(600, 500), 
+      maximumSize: Size(1200, 800),
       center: true,
       backgroundColor: Colors.transparent,
       skipTaskbar: false,
@@ -362,48 +363,50 @@ class _MainWindowState extends State<MainWindow> with WindowListener {
               onInvoke: (intent) => _handleShowHelp(),
             ),
           },
-          child: Scaffold(
-            appBar: AppBar(
-              title: const Text('Yall'),
-              centerTitle: true,
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.settings),
-                  tooltip: 'Open Settings (Ctrl+,)',
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const SettingsWindow(),
-                      ),
-                    );
-                  },
-                ),
-                Consumer2<SystemTrayManager, WindowStateManager>(
-                  builder:
-                      (context, systemTrayManager, windowStateManager, child) {
-                        if (systemTrayManager.isInitialized) {
-                          return IconButton(
-                            icon: const Icon(Icons.minimize),
-                            tooltip: 'Minimize to tray',
-                            onPressed: () async {
-                              if (windowStateManager.isInitialized) {
-                                await windowStateManager.hideWindow();
-                              } else {
-                                await systemTrayManager.minimizeToTray();
-                              }
-                            },
+          child: Platform.isWindows 
+              ? const WindowsMainLayout()
+              : Scaffold(
+                  appBar: AppBar(
+                    title: const Text('Yall'),
+                    centerTitle: true,
+                    actions: [
+                      IconButton(
+                        icon: const Icon(Icons.settings),
+                        tooltip: 'Open Settings (Ctrl+,)',
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const SettingsWindow(),
+                            ),
                           );
-                        }
-                        return const SizedBox.shrink();
-                      },
+                        },
+                      ),
+                      Consumer2<SystemTrayManager, WindowStateManager>(
+                        builder:
+                            (context, systemTrayManager, windowStateManager, child) {
+                              if (systemTrayManager.isInitialized) {
+                                return IconButton(
+                                  icon: const Icon(Icons.minimize),
+                                  tooltip: 'Minimize to tray',
+                                  onPressed: () async {
+                                    if (windowStateManager.isInitialized) {
+                                      await windowStateManager.hideWindow();
+                                    } else {
+                                      await systemTrayManager.minimizeToTray();
+                                    }
+                                  },
+                                );
+                              }
+                              return const SizedBox.shrink();
+                            },
+                      ),
+                    ],
+                  ),
+                  body: Semantics(
+                    label: 'Main posting area',
+                    child: const SingleChildScrollView(child: PostingWidget()),
+                  ),
                 ),
-              ],
-            ),
-            body: Semantics(
-              label: 'Main posting area',
-              child: const SingleChildScrollView(child: PostingWidget()),
-            ),
-          ),
         ),
       ),
     );

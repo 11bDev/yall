@@ -53,10 +53,11 @@ class SystemTrayManager extends ChangeNotifier {
         throw SystemTrayException('System tray not supported on this platform');
       }
 
-      // Initialize the system tray
+      // Initialize the system tray with better visibility settings
       await _systemTray.initSystemTray(
         title: "Yall",
         iconPath: _getTrayIconPath(),
+        toolTip: _getTrayTooltip(),
       );
 
       // Set up the context menu
@@ -87,21 +88,26 @@ class SystemTrayManager extends ChangeNotifier {
 
     await menu.buildFrom([
       MenuItemLabel(
-        label: 'Show Window',
+        label: '🖼️ Show Yall',
         onClicked: (menuItem) => _handleShowWindow(),
       ),
       MenuItemLabel(
-        label: 'Hide Window',
+        label: '🫥 Hide to Tray',
         onClicked: (menuItem) => _handleHideWindow(),
       ),
       MenuSeparator(),
       MenuItemLabel(
-        label: 'Settings',
+        label: '✍️ New Post',
+        onClicked: (menuItem) => _handleNewPost(),
+      ),
+      MenuSeparator(),
+      MenuItemLabel(
+        label: '⚙️ Settings',
         onClicked: (menuItem) => _handleOpenSettings(),
       ),
       MenuSeparator(),
       MenuItemLabel(
-        label: 'Quit',
+        label: '❌ Quit Yall',
         onClicked: (menuItem) => _handleQuitApplication(),
       ),
     ]);
@@ -112,6 +118,7 @@ class SystemTrayManager extends ChangeNotifier {
   /// Get the appropriate tray icon path for the current platform
   String _getTrayIconPath() {
     if (Platform.isWindows) {
+      // Use ICO format for better Windows compatibility and visibility
       return 'assets/icons/tray_icon.ico';
     } else if (Platform.isMacOS) {
       return 'assets/icons/tray_icon.png';
@@ -119,6 +126,11 @@ class SystemTrayManager extends ChangeNotifier {
       // Linux and other platforms
       return 'assets/icons/tray_icon.svg';
     }
+  }
+
+  /// Get a tooltip text for the tray icon
+  String _getTrayTooltip() {
+    return 'Yall - Multi-platform Social Media Poster';
   }
 
   /// Handle tray icon click
@@ -143,6 +155,12 @@ class SystemTrayManager extends ChangeNotifier {
   /// Handle settings menu item
   void _handleOpenSettings() {
     onOpenSettings?.call();
+  }
+
+  /// Handle new post menu item
+  void _handleNewPost() {
+    // Show window and focus on it for new post
+    showWindow();
   }
 
   /// Handle quit application menu item

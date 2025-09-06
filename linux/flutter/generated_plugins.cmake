@@ -4,11 +4,13 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   flutter_secure_storage_linux
+  gtk
   handy_window
   screen_retriever_linux
   system_tray
+  url_launcher_linux
   window_manager
-  yaru
+  yaru_window_linux
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

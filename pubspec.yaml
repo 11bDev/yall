@@ -16,10 +16,10 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.5+1
+version: 1.0.6+1
 
 environment:
-  sdk: ^3.8.1
+  sdk: ^3.5.0
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -42,7 +42,7 @@ dependencies:
   flutter_secure_storage: ^9.2.2
 
   # HTTP client for API calls
-  http: ^1.2.1
+  http: ^1.5.0
 
   # OAuth for X (Twitter) authentication
   oauth1: ^2.0.0
@@ -67,15 +67,18 @@ dependencies:
   bech32: ^0.2.2
 
   # Package info for version details
-  package_info_plus: ^8.0.0
+  package_info_plus: ^8.3.1
 
   # Image handling and file picking
-  file_picker: ^8.1.2
+  file_picker: ^10.3.2
   image: ^4.2.0
   path: ^1.9.0
-  mime: ^1.0.6
-  yaru: ^0.4.8
+  mime: ^2.0.0
+  yaru: ^8.2.0
   handy_window: ^0.4.0
+
+  # URL launching for OAuth flows
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
@@ -89,8 +92,8 @@ dev_dependencies:
   flutter_lints: ^6.0.0
 
   # Testing dependencies
-  mockito: ^5.4.4
-  build_runner: ^2.4.9
+  mockito: ^5.5.1
+  build_runner: ^2.8.0
   integration_test:
     sdk: flutter
   flutter_launcher_icons: ^0.14.4

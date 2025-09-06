@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../models/platform_type.dart';
 import '../../providers/account_manager.dart';
 import '../../services/nostr_service.dart';
+import '../oauth_login_widget.dart';
 
 /// Dialog for adding a new social media account
 class AddAccountDialog extends StatefulWidget {
@@ -57,6 +58,12 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
     // Add optional fields for Nostr
     if (widget.platform == PlatformType.nostr) {
       _credentialControllers['blossom_server'] = TextEditingController();
+      // Add signer type fields
+      _credentialControllers['signer_type'] = TextEditingController(text: 'local');
+      _credentialControllers['remote_pubkey'] = TextEditingController();
+      _credentialControllers['relay_url'] = TextEditingController();
+      _credentialControllers['bunker_url'] = TextEditingController();
+      _credentialControllers['bunker_secret'] = TextEditingController();
     }
   }
 
@@ -67,7 +74,18 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
       case PlatformType.bluesky:
         return ['identifier', 'password'];
       case PlatformType.nostr:
-        return ['private_key'];
+        // Dynamic requirements based on signer type
+        final signerType = _getNostrSignerType();
+        switch (signerType) {
+          case 'local':
+            return ['private_key'];
+          case 'remote':
+            return ['remote_pubkey', 'relay_url'];
+          case 'bunker':
+            return ['bunker_url'];
+          default:
+            return ['private_key'];
+        }
       case PlatformType.microblog:
         return ['username', 'app_token'];
       case PlatformType.x:
@@ -87,6 +105,7 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
       ),
       content: SizedBox(
         width: 400,
+        height: 500, // Add max height to prevent overflow
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
@@ -121,6 +140,67 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
                   ),
                   const SizedBox(height: 16),
                 ],
+                
+                // OAuth option for supported platforms
+                if (_supportsOAuth(widget.platform)) ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.security,
+                              color: Theme.of(context).colorScheme.onPrimaryContainer,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Recommended: OAuth Login',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(context).colorScheme.onPrimaryContainer,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Use OAuth for secure authentication without sharing your password.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Theme.of(context).colorScheme.onPrimaryContainer,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.icon(
+                            onPressed: _startOAuthFlow,
+                            icon: const Icon(Icons.launch),
+                            label: const Text('Login with OAuth'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: Text(
+                      'OR',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w500,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                
                 _buildBasicFields(),
                 const SizedBox(height: 16),
                 _buildCredentialFields(),
@@ -225,60 +305,189 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Nsec input field
-        TextFormField(
-          controller: _nsecController,
-          decoration: const InputDecoration(
-            labelText: 'Private Key (nsec format)',
-            hintText: 'nsec1... (recommended)',
-            prefixIcon: Icon(Icons.key_outlined),
-            helperText:
-                'Enter your nsec private key - it will be converted to hex automatically',
-          ),
-          onChanged: (value) {
-            if (value.startsWith('nsec')) {
-              final hexKey = NostrService.convertNsecToHex(value);
-              if (hexKey != null) {
-                _credentialControllers['private_key']?.text = hexKey;
+        // Signer Type Selection
+        Text(
+          'Signer Type',
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        const SizedBox(height: 8),
+        SegmentedButton<String>(
+          segments: const [
+            ButtonSegment(
+              value: 'local',
+              label: Text('Local Key'),
+              icon: Icon(Icons.key),
+            ),
+            ButtonSegment(
+              value: 'remote',
+              label: Text('Remote Signer'),
+              icon: Icon(Icons.cloud_outlined),
+            ),
+            ButtonSegment(
+              value: 'bunker',
+              label: Text('Bunker (NIP-46)'),
+              icon: Icon(Icons.security),
+            ),
+          ],
+          selected: {_getNostrSignerType()},
+          onSelectionChanged: (Set<String> selection) {
+            setState(() {
+              _credentialControllers['signer_type']?.text = selection.first;
+              // Clear other fields when switching signer types
+              _nsecController.clear();
+              _credentialControllers['private_key']?.clear();
+              _credentialControllers['bunker_url']?.clear();
+              _credentialControllers['bunker_secret']?.clear();
+              _credentialControllers['remote_pubkey']?.clear();
+            });
+          },
+        ),
+        const SizedBox(height: 16),
+
+        // Local Key Fields (original implementation)
+        if (_getNostrSignerType() == 'local') ...[
+          // Nsec input field
+          TextFormField(
+            controller: _nsecController,
+            decoration: const InputDecoration(
+              labelText: 'Private Key (nsec format)',
+              hintText: 'nsec1... (recommended)',
+              prefixIcon: Icon(Icons.key_outlined),
+              helperText:
+                  'Enter your nsec private key - it will be converted to hex automatically',
+            ),
+            onChanged: (value) {
+              if (value.startsWith('nsec')) {
+                final hexKey = NostrService.convertNsecToHex(value);
+                if (hexKey != null) {
+                  _credentialControllers['private_key']?.text = hexKey;
+                }
+              } else {
+                _credentialControllers['private_key']?.text = '';
               }
-            } else {
-              _credentialControllers['private_key']?.text = '';
-            }
-          },
-          validator: (value) {
-            if (value != null &&
-                value.isNotEmpty &&
-                !value.startsWith('nsec')) {
-              return 'Please enter a valid nsec private key (starts with nsec1...)';
-            }
-            return null;
-          },
-        ),
-        const SizedBox(height: 12),
-
-        // Hex output field (read-only)
-        TextFormField(
-          controller: _credentialControllers['private_key'],
-          decoration: const InputDecoration(
-            labelText: 'Private Key (hex format)',
-            hintText: 'Auto-filled from nsec above, or enter hex directly',
-            prefixIcon: Icon(Icons.vpn_key),
-            helperText:
-                'This is the actual key used for signing (64 hex characters)',
+            },
+            validator: (value) {
+              if (_getNostrSignerType() == 'local' &&
+                  value != null &&
+                  value.isNotEmpty &&
+                  !value.startsWith('nsec')) {
+                return 'Please enter a valid nsec private key (starts with nsec1...)';
+              }
+              return null;
+            },
           ),
-          validator: (value) {
-            if (value == null || value.trim().isEmpty) {
-              return 'Private key is required - enter nsec above or hex here';
-            }
-            if (value.trim().length < 32) {
-              return 'Private key too short - should be 64 hex chars';
-            }
-            return null;
-          },
-        ),
+          const SizedBox(height: 12),
+
+          // Hex output field (read-only)
+          TextFormField(
+            controller: _credentialControllers['private_key'],
+            decoration: const InputDecoration(
+              labelText: 'Private Key (hex format)',
+              hintText: 'Auto-filled from nsec above, or enter hex directly',
+              prefixIcon: Icon(Icons.vpn_key),
+              helperText:
+                  'This is the actual key used for signing (64 hex characters)',
+            ),
+            validator: (value) {
+              if (_getNostrSignerType() == 'local') {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Private key is required - enter nsec above or hex here';
+                }
+                if (value.trim().length < 32) {
+                  return 'Private key too short - should be 64 hex chars';
+                }
+              }
+              return null;
+            },
+          ),
+        ],
+
+        // Remote Signer Fields
+        if (_getNostrSignerType() == 'remote') ...[
+          TextFormField(
+            controller: _credentialControllers['remote_pubkey'],
+            decoration: const InputDecoration(
+              labelText: 'Remote Signer Public Key',
+              hintText: 'npub1... or hex format',
+              prefixIcon: Icon(Icons.public),
+              helperText: 'Public key of the remote signer service',
+            ),
+            validator: (value) {
+              if (_getNostrSignerType() == 'remote') {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Remote signer public key is required';
+                }
+                if (!NostrService.isValidPublicKey(value.trim())) {
+                  return 'Invalid public key format. Use npub1... or 64-char hex';
+                }
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _credentialControllers['relay_url'],
+            decoration: const InputDecoration(
+              labelText: 'Signer Relay URL',
+              hintText: 'wss://relay.example.com',
+              prefixIcon: Icon(Icons.link),
+              helperText: 'Relay where the remote signer is accessible',
+            ),
+            validator: (value) {
+              if (_getNostrSignerType() == 'remote' &&
+                  (value == null || value.trim().isEmpty)) {
+                return 'Relay URL is required for remote signer';
+              }
+              if (value != null && 
+                  value.isNotEmpty && 
+                  !value.startsWith('wss://') && 
+                  !value.startsWith('ws://')) {
+                return 'Relay URL must start with wss:// or ws://';
+              }
+              return null;
+            },
+          ),
+        ],
+
+        // Bunker (NIP-46) Fields  
+        if (_getNostrSignerType() == 'bunker') ...[
+          TextFormField(
+            controller: _credentialControllers['bunker_url'],
+            decoration: const InputDecoration(
+              labelText: 'Bunker URL',
+              hintText: 'bunker://pubkey@relay-url?secret=xxx',
+              prefixIcon: Icon(Icons.security),
+              helperText: 'Complete bunker URL with public key and secret',
+            ),
+            validator: (value) {
+              if (_getNostrSignerType() == 'bunker' &&
+                  (value == null || value.trim().isEmpty)) {
+                return 'Bunker URL is required';
+              }
+              if (value != null && 
+                  value.isNotEmpty && 
+                  !value.startsWith('bunker://')) {
+                return 'Bunker URL must start with bunker://';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _credentialControllers['bunker_secret'],
+            decoration: const InputDecoration(
+              labelText: 'Bunker Secret (Optional)',
+              hintText: 'Secret for bunker authentication',
+              prefixIcon: Icon(Icons.key),
+              helperText: 'Optional secret if not included in bunker URL',
+            ),
+            obscureText: true,
+          ),
+        ],
+
         const SizedBox(height: 12),
 
-        // Blossom server field (optional)
+        // Blossom server field (optional for all signer types)
         TextFormField(
           controller: _credentialControllers['blossom_server'],
           decoration: const InputDecoration(
@@ -522,6 +731,10 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
     );
   }
 
+  String _getNostrSignerType() {
+    return _credentialControllers['signer_type']?.text ?? 'local';
+  }
+
   String _getSetupInstructions(PlatformType platform) {
     switch (platform) {
       case PlatformType.mastodon:
@@ -539,11 +752,32 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
             '4. Use your full handle (user.bsky.social) or domain name\n'
             '5. Use the generated password, not your account password';
       case PlatformType.nostr:
-        return 'For Nostr setup:\n'
-            '1. Use your existing private key (nsec format or hex)\n'
-            '2. Your private key is all you need - no username required\n'
-            '3. Keep your private key secure and never share it\n'
-            '4. Optional: Enter a display username for this account';
+        switch (_getNostrSignerType()) {
+          case 'local':
+            return 'For local key setup:\n'
+                '1. Use your existing private key (nsec format or hex)\n'
+                '2. Your private key is all you need - no username required\n'
+                '3. Keep your private key secure and never share it\n'
+                '4. Optional: Enter a display username for this account';
+          case 'remote':
+            return 'For remote signer setup:\n'
+                '1. Get the public key of your remote signer service\n'
+                '2. Enter the relay URL where your signer is accessible\n'
+                '3. The remote signer will handle signing operations\n'
+                '4. Ensure your remote signer is online and accessible';
+          case 'bunker':
+            return 'For NIP-46 bunker setup:\n'
+                '1. Get your bunker URL from your signing service\n'
+                '2. Format: bunker://pubkey@relay-url?secret=xxx\n'
+                '3. Optional: Enter secret separately if not in URL\n'
+                '4. Bunker enables secure remote signing via NIP-46';
+          default:
+            return 'For Nostr setup:\n'
+                '1. Choose your preferred signing method\n'
+                '2. Local key: Use your private key directly\n'
+                '3. Remote signer: Use external signing service\n'
+                '4. Bunker: Use NIP-46 compatible signer';
+        }
       case PlatformType.microblog:
         return 'To get your Micro.blog app token:\n'
             '1. Go to micro.blog and sign in\n'
@@ -578,6 +812,31 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
       case PlatformType.x:
         return Icons.close; // X icon placeholder
     }
+  }
+
+  bool _supportsOAuth(PlatformType platform) {
+    return platform == PlatformType.mastodon;
+  }
+
+  void _startOAuthFlow() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => OAuthLoginWidget(
+        platform: widget.platform,
+        onSuccess: () {
+          // Close OAuth dialog
+          Navigator.of(context).pop();
+          // Close add account dialog
+          Navigator.of(context).pop();
+          // Notify about account added
+          widget.onAccountAdded?.call();
+        },
+        onCancel: () {
+          Navigator.of(context).pop();
+        },
+      ),
+    );
   }
 
   Future<void> _addAccount() async {

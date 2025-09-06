@@ -63,9 +63,12 @@ class _MultiAccountPlatformSelectorState
             initiallyExpanded: widget.initiallyExpanded,
             title: Row(
               children: [
-                Text(
-                  'Select Platforms & Accounts',
-                  style: Theme.of(context).textTheme.titleMedium,
+                Expanded(
+                  child: Text(
+                    'Select Platforms & Accounts',
+                    style: Theme.of(context).textTheme.titleMedium,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 if (widget.selectedPlatforms.isNotEmpty) ...[
                   const SizedBox(width: 8),

@@ -107,6 +107,7 @@ class _EditAccountDialogState extends State<EditAccountDialog> {
       ),
       content: SizedBox(
         width: 400,
+        height: 500, // Add max height to prevent overflow
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(

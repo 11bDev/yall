@@ -82,8 +82,8 @@ class WindowStateManager extends ChangeNotifier with WindowListener {
 
         // Check if current window size matches our desired defaults
         final currentSize = await windowManager.getSize();
-        const desiredWidth = 650.0;
-        const desiredHeight = 750.0;
+        const desiredWidth = 760.0;
+        const desiredHeight = 575.0;
 
         // If current window size matches desired size, prefer current over saved
         if ((currentSize.width - desiredWidth).abs() < 10 &&
@@ -120,8 +120,8 @@ class WindowStateManager extends ChangeNotifier with WindowListener {
   WindowState _validateWindowSize(WindowState state) {
     const double minWidth = 500.0; // Match main.dart minimum
     const double minHeight = 600.0; // Match main.dart minimum
-    const double preferredWidth = 650.0; // Preferred width from main.dart
-    const double preferredHeight = 750.0; // Preferred height from main.dart
+    const double preferredWidth = 760.0; // Preferred width from main.dart
+    const double preferredHeight = 575.0; // Preferred height from main.dart
 
     double? adjustedWidth = state.width;
     double? adjustedHeight = state.height;
