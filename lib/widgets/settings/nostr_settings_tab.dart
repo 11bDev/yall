@@ -189,114 +189,114 @@ class _NostrSettingsTabState extends State<NostrSettingsTab> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
-              children: [
-                Icon(
-                  Icons.electrical_services,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Nostr Relays',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Configure the Nostr relays used for publishing posts. Maximum 10 relays.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Icon(
+                    Icons.electrical_services,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Nostr Relays',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 24),
+              const SizedBox(height: 8),
+              Text(
+                'Configure the Nostr relays used for publishing posts. Maximum 10 relays.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 24),
 
-            // Add relay section
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Form(
-                  key: _formKey,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _relayController,
-                          decoration: const InputDecoration(
-                            labelText: 'Relay URL',
-                            hintText: 'wss://relay.example.com',
-                            prefixIcon: Icon(Icons.link),
+              // Add relay section
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Form(
+                    key: _formKey,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _relayController,
+                            decoration: const InputDecoration(
+                              labelText: 'Relay URL',
+                              hintText: 'wss://relay.example.com',
+                              prefixIcon: Icon(Icons.link),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return null; // Allow empty for optional field
+                              }
+                              if (!_isValidRelayUrl(value.trim())) {
+                                return 'Invalid URL format';
+                              }
+                              return null;
+                            },
+                            onFieldSubmitted: (_) => _addRelay(),
                           ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return null; // Allow empty for optional field
-                            }
-                            if (!_isValidRelayUrl(value.trim())) {
-                              return 'Invalid URL format';
-                            }
-                            return null;
-                          },
-                          onFieldSubmitted: (_) => _addRelay(),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton.icon(
-                        onPressed: _addRelay,
-                        icon: const Icon(Icons.add),
-                        label: const Text('Add'),
-                      ),
-                    ],
+                        const SizedBox(width: 8),
+                        ElevatedButton.icon(
+                          onPressed: _addRelay,
+                          icon: const Icon(Icons.add),
+                          label: const Text('Add'),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            // Relay count and actions
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Relays (${_currentRelays.length}/10)',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                Row(
-                  children: [
-                    if (_hasChanges)
-                      ElevatedButton.icon(
-                        onPressed: _saveChanges,
-                        icon: const Icon(Icons.save),
-                        label: const Text('Save'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.primary,
-                          foregroundColor: Theme.of(
-                            context,
-                          ).colorScheme.onPrimary,
+              // Relay count and actions
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Relays (${_currentRelays.length}/10)',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  Row(
+                    children: [
+                      if (_hasChanges)
+                        ElevatedButton.icon(
+                          onPressed: _saveChanges,
+                          icon: const Icon(Icons.save),
+                          label: const Text('Save'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.primary,
+                            foregroundColor: Theme.of(
+                              context,
+                            ).colorScheme.onPrimary,
+                          ),
                         ),
+                      const SizedBox(width: 8),
+                      OutlinedButton.icon(
+                        onPressed: _resetToDefaults,
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Reset to Defaults'),
                       ),
-                    const SizedBox(width: 8),
-                    OutlinedButton.icon(
-                      onPressed: _resetToDefaults,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Reset to Defaults'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
 
-            // Relay list
-            Expanded(
-              child: _currentRelays.isEmpty
+              // Relay list
+              _currentRelays.isEmpty
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -332,6 +332,8 @@ class _NostrSettingsTabState extends State<NostrSettingsTab> {
                       ),
                     )
                   : ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
                       itemCount: _currentRelays.length,
                       itemBuilder: (context, index) {
                         final relay = _currentRelays[index];
@@ -358,8 +360,8 @@ class _NostrSettingsTabState extends State<NostrSettingsTab> {
                         );
                       },
                     ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

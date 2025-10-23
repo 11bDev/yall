@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:yall/widgets/views/accounts_view.dart';
+import 'package:yall/widgets/views/history_view.dart';
+
 import '../providers/theme_manager.dart';
 import '../providers/account_manager.dart';
 import 'posting_widget.dart';
@@ -281,9 +284,9 @@ class _WindowsMainLayoutState extends State<WindowsMainLayout> {
           child: PostingWidget(),
         );
       case 1:
-        return _buildAccountsView();
+        return const AccountsView();
       case 2:
-        return _buildHistoryView();
+        return const HistoryView();
       case 3:
         return const SettingsWindow();
       case 4:
@@ -296,47 +299,7 @@ class _WindowsMainLayoutState extends State<WindowsMainLayout> {
     }
   }
 
-  Widget _buildAccountsView() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.account_circle, size: 64, color: Colors.grey),
-          SizedBox(height: 16),
-          Text(
-            'Account Management',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Manage your connected social media accounts',
-            style: TextStyle(color: Colors.grey),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildHistoryView() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.history, size: 64, color: Colors.grey),
-          SizedBox(height: 16),
-          Text(
-            'Post History',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'View your previous posts and their status',
-            style: TextStyle(color: Colors.grey),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildHelpView() {
     return const Center(

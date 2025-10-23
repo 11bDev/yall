@@ -33,6 +33,42 @@ chmod +x install-linux.sh
 ./install-linux.sh
 ```
 
+### Windows
+
+For Windows installation instructions, please see the [INSTALL_WINDOWS.md](INSTALL_WINDOWS.md) file.
+
+### Android 🤖
+
+Because sometimes you need to post regrettable content on the go!
+
+#### Direct APK Install (The Easy Way)
+1. Download the latest APK from [releases](https://github.com/timappledotcom/yall/releases/latest)
+2. On your Android device, enable "Install from Unknown Sources" in Settings
+3. Open the APK file and install
+4. Enjoy mobile multi-platform posting!
+
+#### Command Line Install (For the Terminal Warriors)
+```bash
+# Download the latest APK
+wget https://github.com/timappledotcom/yall/releases/latest/download/app-release.apk
+
+# Install on connected device or emulator
+adb install app-release.apk
+```
+
+#### Running in Android Emulator (For Developers)
+```bash
+# List available emulators
+flutter emulators
+
+# Launch an emulator
+flutter emulators --launch <emulator_id>
+
+# Run the app
+flutter pub get
+flutter run
+```
+
 #### Package Managers (For the Sophisticated)
 ```bash
 # Debian/Ubuntu (.deb package)

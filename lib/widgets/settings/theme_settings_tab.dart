@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -84,8 +86,10 @@ class _ThemeSettingsTabState extends State<ThemeSettingsTab> {
               _buildThemeSection(context, themeManager),
               const SizedBox(height: 24),
               _buildAppearanceSection(context),
-              const SizedBox(height: 24),
-              _buildBehaviorSection(context),
+              if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) ...[
+                const SizedBox(height: 24),
+                _buildBehaviorSection(context),
+              ],
               const SizedBox(height: 32),
               _buildActionButtons(context, themeManager),
             ],

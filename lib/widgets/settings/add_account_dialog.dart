@@ -100,114 +100,110 @@ class _AddAccountDialogState extends State<AddAccountDialog> {
         children: [
           Icon(_getPlatformIcon(widget.platform)),
           const SizedBox(width: 12),
-          Text('Add ${widget.platform.displayName} Account'),
+          Text('Add ${widget.platform.displayName}'),
         ],
       ),
-      content: SizedBox(
-        width: 400,
-        height: 500, // Add max height to prevent overflow
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (_error != null) ...[
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.errorContainer,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _error!,
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.error,
-                            ),
+      content: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (_error != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.errorContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _error!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                ],
-                
-                // OAuth option for supported platforms
-                if (_supportsOAuth(widget.platform)) ...[
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.security,
-                              color: Theme.of(context).colorScheme.onPrimaryContainer,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Recommended: OAuth Login',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: Theme.of(context).colorScheme.onPrimaryContainer,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Use OAuth for secure authentication without sharing your password.',
-                          style: TextStyle(
-                            fontSize: 13,
+                ),
+                const SizedBox(height: 16),
+              ],
+              
+              // OAuth option for supported platforms
+              if (_supportsOAuth(widget.platform)) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.security,
                             color: Theme.of(context).colorScheme.onPrimaryContainer,
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: FilledButton.icon(
-                            onPressed: _startOAuthFlow,
-                            icon: const Icon(Icons.launch),
-                            label: const Text('Login with OAuth'),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Recommended: OAuth Login',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.onPrimaryContainer,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Center(
-                    child: Text(
-                      'OR',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w500,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ],
                       ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Use OAuth for secure authentication without sharing your password.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: _startOAuthFlow,
+                          icon: const Icon(Icons.launch),
+                          label: const Text('Login with OAuth'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Center(
+                  child: Text(
+                    'OR',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w500,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                ],
-                
-                _buildBasicFields(),
+                ),
                 const SizedBox(height: 16),
-                _buildCredentialFields(),
-                const SizedBox(height: 16),
-                _buildInstructions(),
               ],
-            ),
+              
+              _buildBasicFields(),
+              const SizedBox(height: 16),
+              _buildCredentialFields(),
+              const SizedBox(height: 16),
+              _buildInstructions(),
+            ],
           ),
         ),
       ),

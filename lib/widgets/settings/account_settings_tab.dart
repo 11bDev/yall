@@ -149,7 +149,7 @@ class _AccountSettingsTabState extends State<AccountSettingsTab> {
                 ElevatedButton.icon(
                   onPressed: () => _showAddAccountDialog(context, platform),
                   icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Add Account'),
+                  label: const Text('Add'),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
