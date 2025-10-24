@@ -2,20 +2,20 @@
 
 **Y**et **A**nother **L**ink **L**ogger - Because shouting into the void is only fun when you can do it across MULTIPLE voids simultaneously! 
 
-A cross-platform desktop application that lets you post to Mastodon, Bluesky, Nostr, X (Twitter), and Micro.blog all at once. Because why have one social media addiction when you can have five? 🤷‍♂️
+An Android application that lets you post to Mastodon, Bluesky, Nostr, X (Twitter), and Micro.blog all at once. Because why have one social media addiction when you can have five? 🤷‍♂️
 
 ## Features 🚀
 
 - 🎯 **Multi-Platform Posting**: Spam your thoughts to Mastodon, Bluesky, Nostr, X, and Micro.blog simultaneously (your followers will thank you... maybe)
 - 🔒 **Secure Credential Storage**: Your API keys are safer than your browser history
 - 🎨 **Modern UI**: So pretty you'll actually want to use it (revolutionary concept)
-- 💻 **Desktop Native**: System tray integration because closing apps is for quitters
-- ⌨️ **Keyboard Shortcuts**: For when clicking is too mainstream
+- � **Mobile Native**: Post regrettable content on the go!
 - 🔄 **Auto-Retry Logic**: Persistent like your ex, but actually helpful
 - 🛡️ **Error Handling**: Fails gracefully, unlike my life choices
 - ♿ **Accessibility**: Everyone deserves to post regrettable content equally
 - 🧹 **Auto-Clear Success Messages**: Because staring at "success" for eternity gets old
 - 🗂️ **Collapsible Platform Selector**: Saves space and your sanity
+- 📸 **Media Support**: Post images to Nostr, Bluesky, and X (because a picture is worth 280 characters)
 
 ## Why "Yall"? 🤔
 
@@ -23,23 +23,9 @@ Because "Y'all need to stop using so many different social media platforms" was 
 
 ## Installation 📦
 
-### Linux (The Chosen OS)
-
-#### Quick Install
-```bash
-# Download and run our installer (trust us, we're basically professionals)
-wget https://github.com/timappledotcom/yall/releases/latest/download/install-linux.sh
-chmod +x install-linux.sh
-./install-linux.sh
-```
-
-### Windows
-
-For Windows installation instructions, please see the [INSTALL_WINDOWS.md](INSTALL_WINDOWS.md) file.
-
 ### Android 🤖
 
-Because sometimes you need to post regrettable content on the go!
+Because you need to post regrettable content on the go!
 
 #### Install with Obtainium (Recommended)
 [Obtainium](https://obtainium.imranr.dev/) is an open-source app that allows you to install and update apps directly from their releases pages.
@@ -60,43 +46,19 @@ Because sometimes you need to post regrettable content on the go!
 #### Command Line Install (For the Terminal Warriors)
 ```bash
 # Download the latest APK
-wget https://github.com/timappledotcom/yall/releases/latest/download/app-release.apk
+wget https://github.com/11bDev/yall/releases/latest/download/app-release.apk
 
 # Install on connected device or emulator
 adb install app-release.apk
 ```
 
-#### Running in Android Emulator (For Developers)
-```bash
-# List available emulators
-flutter emulators
-
-# Launch an emulator
-flutter emulators --launch <emulator_id>
-
-# Run the app
-flutter pub get
-flutter run
-```
-
-#### Package Managers (For the Sophisticated)
-```bash
-# Debian/Ubuntu (.deb package)
-wget https://github.com/timappledotcom/yall/releases/latest/download/yall_1.0.4_amd64.deb
-sudo dpkg -i yall_1.0.4_amd64.deb
-
-# RedHat/Fedora (.rpm package)
-wget https://github.com/timappledotcom/yall/releases/latest/download/yall-1.0.4-1.x86_64.rpm
-sudo rpm -i yall-1.0.4-1.x86_64.rpm
-```
-
 #### Building from Source (For the Brave)
 ```bash
-git clone https://github.com/timappledotcom/yall.git
+git clone https://github.com/11bDev/yall.git
 cd yall
 flutter pub get
-flutter build linux --release
-./install-linux.sh
+flutter build apk --release
+# Find your APK in build/app/outputs/flutter-apk/app-release.apk
 ```
 
 ## Platform Setup 🛠️
@@ -171,16 +133,6 @@ You'll need FOUR keys (because one wasn't complicated enough):
 3. Enter both in Yall
 4. Blog responsibly!
 
-## Keyboard Shortcuts ⌨️
-
-Because clicking is so last century:
-
-- `Ctrl+N`: Focus on new post (like Ctrl+N for "New regret")
-- `Ctrl+Enter`: Send post to the void(s)
-- `Ctrl+,`: Open settings (comma for "configure")
-- `Escape`: Cancel operation (escape your poor life choices)
-- `F1`: Show help (when all else fails)
-
 ## FAQ 🤔
 
 **Q: Why does X require so many credentials?**
@@ -198,6 +150,12 @@ A: The app will retry a few times, then gracefully give up (unlike your Twitter 
 **Q: Can I schedule posts?**
 A: Not yet, but it's on our roadmap (somewhere between "fix that one bug" and "achieve world peace").
 
+**Q: Does this work on iOS/Desktop?**
+A: Not anymore! As of v1.1.1, Yall is Android-only. We decided to focus on mobile and make the app lean and mean. Desktop/iOS versions may return in the future if there's demand.
+
+**Q: Can I post images?**
+A: Yes! You can attach images to your posts on Nostr, Bluesky, and X. The app handles all the upload magic for you.
+
 ## Contributing 🤝
 
 Want to make Yall even more chaotically useful? We accept:
@@ -208,10 +166,11 @@ Want to make Yall even more chaotically useful? We accept:
 
 ## Support 💬
 
-If something's broken (and it probably is), check our [GitHub Issues](https://github.com/timappledotcom/yall/issues) or create a new one. Include:
+If something's broken (and it probably is), check our [GitHub Issues](https://github.com/11bDev/yall/issues) or create a new one. Include:
 - What you did
 - What you expected to happen  
 - What actually happened
+- Your device and Android version
 - Your favorite emoji (for emotional support)
 
 ## License 📄
@@ -226,8 +185,9 @@ Coming soon(ish):
 - [ ] Thread support (because one post isn't enough chaos)
 - [ ] Post analytics (see how your content performs across the void)
 - [ ] More platforms (because 5 isn't enough, apparently)
-- [ ] Mobile app (for portable regret)
+- [ ] Video support (because images aren't enough)
 - [ ] AI integration (because everything needs AI these days)
+- [ ] Desktop/iOS versions (if there's demand)
 
 ## Credits 🙏
 
