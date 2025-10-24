@@ -128,8 +128,15 @@ class XService extends SocialPlatformService {
       final tweetData = <String, dynamic>{'text': postData.content};
 
       if (mediaIds.isNotEmpty) {
-        tweetData['media'] = {'media_ids': mediaIds};
+        // X API v2 expects media object with media_ids array
+        tweetData['media'] = {
+          'media_ids': mediaIds,
+        };
       }
+      
+      // Debug logging
+      print('X Post - Media IDs to attach: $mediaIds');
+      print('X Post - Tweet data: ${jsonEncode(tweetData)}');
 
       final url = Uri.parse('https://api.twitter.com/2/tweets');
       final authHeader = _generateOAuthHeader(
@@ -151,12 +158,17 @@ class XService extends SocialPlatformService {
         );
 
         if (response.statusCode == 201) {
+          final responseData = jsonDecode(response.body);
+          print('X Post successful: ${responseData['data']?['id']}');
           return createSuccessResult(postData.content);
         } else {
+          print('X Post failed: ${response.statusCode}');
+          print('Response body: ${response.body}');
           final errorData = jsonDecode(response.body);
           final errorMessage =
               errorData['detail'] ??
               errorData['title'] ??
+              errorData['errors']?[0]?['message'] ??
               'Failed to post to X (${response.statusCode})';
           return createFailureResult(
             postData.content,
