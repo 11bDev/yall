@@ -135,7 +135,9 @@ class XService extends SocialPlatformService {
       }
       
       // Debug logging
-      print('X Post - Media IDs count: ${mediaIds.length}');
+      print('\n=== X POST DEBUG ===');
+      print('X Post - Content length: ${postData.content.length}');
+      print('X Post - Media count: ${mediaIds.length}');
       print('X Post - Media IDs: $mediaIds');
       print('X Post - Tweet data: ${jsonEncode(tweetData)}');
 
@@ -149,6 +151,9 @@ class XService extends SocialPlatformService {
 
       final client = http.Client();
       try {
+        print('X Post - Sending request to $url');
+        print('X Post - Headers: Content-Type, Authorization');
+        
         final response = await client.post(
           url,
           headers: {
@@ -158,19 +163,24 @@ class XService extends SocialPlatformService {
           body: jsonEncode(tweetData),
         );
 
+        print('X Post - Response status: ${response.statusCode}');
+        print('X Post - Response body: ${response.body}');
+
         if (response.statusCode == 201) {
           final responseData = jsonDecode(response.body);
-          print('X Post successful: ${responseData['data']?['id']}');
+          print('X Post - ✓ Successfully posted! ID: ${responseData['data']?['id']}');
+          print('=== END X POST DEBUG ===\n');
           return createSuccessResult(postData.content);
         } else {
-          print('X Post failed: ${response.statusCode}');
-          print('Response body: ${response.body}');
+          print('X Post - ✗ Post failed');
           final errorData = jsonDecode(response.body);
           final errorMessage =
               errorData['detail'] ??
               errorData['title'] ??
               errorData['errors']?[0]?['message'] ??
               'Failed to post to X (${response.statusCode})';
+          print('X Post - Error: $errorMessage');
+          print('=== END X POST DEBUG ===\n');
           return createFailureResult(
             postData.content,
             errorMessage,
@@ -201,6 +211,9 @@ class XService extends SocialPlatformService {
         .toString();
     final nonce = _generateNonce();
 
+    print('OAuth Debug - Timestamp: $timestamp');
+    print('OAuth Debug - Nonce: $nonce');
+
     final oauthParams = <String, String>{
       'oauth_consumer_key': consumerKey,
       'oauth_nonce': nonce,
@@ -212,14 +225,17 @@ class XService extends SocialPlatformService {
 
     // Create signature base string
     final baseString = _createSignatureBaseString(method, url, oauthParams);
+    print('OAuth Debug - Signature base string: $baseString');
 
     // Create signing key
     final signingKey =
         '${Uri.encodeComponent(consumerSecret)}&${Uri.encodeComponent(accessTokenSecret)}';
+    print('OAuth Debug - Signing key: ${signingKey.substring(0, 20)}...');
 
     // Generate signature
     final signature = _hmacSha1(signingKey, baseString);
     oauthParams['oauth_signature'] = signature;
+    print('OAuth Debug - Signature: $signature');
 
     // Build authorization header
     final headerParams = oauthParams.entries
@@ -271,20 +287,32 @@ class XService extends SocialPlatformService {
     Account account,
   ) async {
     try {
+      print('\n=== X MEDIA UPLOAD DEBUG ===');
+      print('X: Starting media upload process');
+      
       Uint8List bytes;
 
       if (attachment.file != null) {
         if (!attachment.file!.existsSync()) {
-          print('Media file not found: ${attachment.file!.path}');
+          print('X: ERROR - Media file not found: ${attachment.file!.path}');
           return null;
         }
         bytes = await attachment.file!.readAsBytes();
+        print('X: Read ${bytes.length} bytes from file: ${attachment.fileName}');
       } else if (attachment.bytes != null) {
         bytes = attachment.bytes!;
+        print('X: Using ${bytes.length} bytes from memory: ${attachment.fileName}');
       } else {
-        print('No file or bytes available for media attachment');
+        print('X: ERROR - No file or bytes available for media attachment');
         return null;
       }
+
+      // Verify credentials
+      print('X: Verifying credentials...');
+      print('X: API Key: ${account.credentials['api_key']?.substring(0, 5)}...');
+      print('X: API Secret: ${account.credentials['api_secret']?.substring(0, 5)}...');
+      print('X: Access Token: ${account.credentials['access_token']?.substring(0, 5)}...');
+      print('X: Access Token Secret: ${account.credentials['access_token_secret']?.substring(0, 5)}...');
 
       final client = http.Client();
 
@@ -292,10 +320,14 @@ class XService extends SocialPlatformService {
         // Simple single-step upload to Twitter v1.1 API
         // This matches the working fragout implementation
         final url = Uri.parse('https://upload.twitter.com/1.1/media/upload.json');
+        print('X: Upload URL: $url');
+        
         final authHeader = _generateOAuthHeader('POST', url, account);
+        print('X: Generated OAuth header: ${authHeader.substring(0, 50)}...');
 
         final request = http.MultipartRequest('POST', url);
         request.headers['Authorization'] = authHeader;
+        request.headers['User-Agent'] = 'Yall/1.1.3';
         request.files.add(
           http.MultipartFile.fromBytes(
             'media',
@@ -304,27 +336,38 @@ class XService extends SocialPlatformService {
           ),
         );
 
-        print('X: Uploading media (${bytes.length} bytes)...');
+        print('X: Sending multipart request with ${bytes.length} bytes...');
+        print('X: Request headers: ${request.headers.keys.join(', ')}');
+        
         final streamedResponse = await client.send(request);
         final response = await http.Response.fromStream(streamedResponse);
 
-        print('X: Media upload response: ${response.statusCode}');
+        print('X: Upload response status: ${response.statusCode}');
+        print('X: Upload response headers: ${response.headers}');
+        print('X: Upload response body: ${response.body}');
         
         if (response.statusCode == 200 || response.statusCode == 201) {
           final result = jsonDecode(response.body);
           final mediaId = result['media_id_string'] as String;
-          print('X: Media uploaded successfully with ID: $mediaId');
+          print('X: ✓ Media uploaded successfully!');
+          print('X: Media ID: $mediaId');
+          print('=== END MEDIA UPLOAD DEBUG ===\n');
           return mediaId;
         } else {
-          print('X: Media upload failed: ${response.statusCode} - ${response.body}');
+          print('X: ✗ Media upload FAILED');
+          print('X: Status code: ${response.statusCode}');
+          print('X: Response body: ${response.body}');
+          print('=== END MEDIA UPLOAD DEBUG ===\n');
           return null;
         }
       } finally {
         client.close();
       }
     } catch (e, stackTrace) {
-      print('Error uploading media: $e');
-      print('Stack trace: $stackTrace');
+      print('X: ✗ EXCEPTION during media upload');
+      print('X: Error: $e');
+      print('X: Stack trace: $stackTrace');
+      print('=== END MEDIA UPLOAD DEBUG ===\n');
       return null;
     }
   }
