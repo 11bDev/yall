@@ -41,8 +41,18 @@ For Windows installation instructions, please see the [INSTALL_WINDOWS.md](INSTA
 
 Because sometimes you need to post regrettable content on the go!
 
-#### Direct APK Install (The Easy Way)
-1. Download the latest APK from [releases](https://github.com/timappledotcom/yall/releases/latest)
+#### Install with Obtainium (Recommended)
+[Obtainium](https://obtainium.imranr.dev/) is an open-source app that allows you to install and update apps directly from their releases pages.
+
+1. Install [Obtainium](https://obtainium.imranr.dev/) from F-Droid or GitHub
+2. In Obtainium, tap "Add App"
+3. Paste this repository URL: `https://github.com/11bDev/yall`
+4. Obtainium will automatically detect the latest APK
+5. Tap "Add" and then "Install"
+6. Future updates will be detected automatically!
+
+#### Direct APK Install (The Manual Way)
+1. Download the latest APK from [releases](https://github.com/11bDev/yall/releases/latest)
 2. On your Android device, enable "Install from Unknown Sources" in Settings
 3. Open the APK file and install
 4. Enjoy mobile multi-platform posting!
