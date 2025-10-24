@@ -87,7 +87,8 @@ class _EditAccountDialogState extends State<EditAccountDialog> {
       case PlatformType.bluesky:
         return ['handle', 'app_password'];
       case PlatformType.nostr:
-        return ['private_key'];
+        // Include blossom_server as an optional field that can be edited
+        return ['private_key', 'blossom_server'];
       case PlatformType.microblog:
         return ['username', 'app_token'];
       case PlatformType.x:
@@ -339,6 +340,9 @@ class _EditAccountDialogState extends State<EditAccountDialog> {
         fieldName.contains('password') ||
         fieldName.contains('token') ||
         fieldName.contains('key');
+    
+    // blossom_server is optional
+    final isOptional = fieldName == 'blossom_server';
 
     return TextFormField(
       controller: controller,
@@ -349,10 +353,14 @@ class _EditAccountDialogState extends State<EditAccountDialog> {
         prefixIcon: Icon(_getFieldIcon(fieldName)),
       ),
       validator: (value) {
-        if (value == null || value.trim().isEmpty) {
+        // Skip validation for optional empty fields
+        if (isOptional && (value == null || value.trim().isEmpty)) {
+          return null;
+        }
+        if (!isOptional && (value == null || value.trim().isEmpty)) {
           return '${_getFieldLabel(fieldName)} is required';
         }
-        return _validateCredentialField(fieldName, value);
+        return _validateCredentialField(fieldName, value!);
       },
     );
   }
@@ -375,6 +383,8 @@ class _EditAccountDialogState extends State<EditAccountDialog> {
         return 'App Password';
       case 'private_key':
         return 'Private Key';
+      case 'blossom_server':
+        return 'Blossom Server (Optional)';
       default:
         return fieldName
             .replaceAll('_', ' ')
@@ -402,6 +412,8 @@ class _EditAccountDialogState extends State<EditAccountDialog> {
         return 'Generated app password from Bluesky';
       case 'private_key':
         return 'Your Nostr private key (nsec...)';
+      case 'blossom_server':
+        return 'https://blossom.example.com (for image uploads)';
       default:
         return 'Enter your ${_getFieldLabel(fieldName).toLowerCase()}';
     }
@@ -423,6 +435,8 @@ class _EditAccountDialogState extends State<EditAccountDialog> {
         return Icons.account_circle;
       case 'private_key':
         return Icons.vpn_key;
+      case 'blossom_server':
+        return Icons.cloud_upload;
       default:
         return Icons.text_fields;
     }
@@ -444,6 +458,18 @@ class _EditAccountDialogState extends State<EditAccountDialog> {
       case 'private_key':
         if (!value.startsWith('nsec') && value.length < 32) {
           return 'Private key should be nsec format or hex (32+ chars)';
+        }
+        break;
+      case 'blossom_server':
+        // Validate URL format if provided
+        if (value.isNotEmpty) {
+          final uri = Uri.tryParse(value);
+          if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
+            return 'Please enter a valid URL (e.g., https://blossom.example.com)';
+          }
+          if (!uri.scheme.startsWith('http')) {
+            return 'URL must start with http:// or https://';
+          }
         }
         break;
     }

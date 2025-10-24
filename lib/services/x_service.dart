@@ -259,7 +259,7 @@ class XService extends SocialPlatformService {
   ) async {
     try {
       Uint8List bytes;
-      String filename;
+      String mimeType;
 
       if (attachment.file != null) {
         if (!attachment.file!.existsSync()) {
@@ -267,45 +267,100 @@ class XService extends SocialPlatformService {
           return null;
         }
         bytes = await attachment.file!.readAsBytes();
-        filename = attachment.file!.path.split('/').last;
+        mimeType = attachment.mimeType;
       } else if (attachment.bytes != null) {
         bytes = attachment.bytes!;
-        filename = attachment.fileName;
+        mimeType = attachment.mimeType;
       } else {
         print('No file or bytes available for media attachment');
         return null;
       }
 
-      final url = Uri.parse('https://upload.twitter.com/1.1/media/upload.json');
-      final authHeader = _generateOAuthHeader('POST', url, account);
-
       final client = http.Client();
 
       try {
-        // Upload media using multipart request
-        final request = http.MultipartRequest('POST', url);
-        request.headers['Authorization'] = authHeader;
-        request.files.add(
-          http.MultipartFile.fromBytes('media', bytes, filename: filename),
+        // Step 1: INIT - Initialize upload
+        final initUrl = Uri.parse(
+          'https://upload.twitter.com/1.1/media/upload.json?'
+          'command=INIT&total_bytes=${bytes.length}&media_type=$mimeType',
+        );
+        final initAuthHeader = _generateOAuthHeader('POST', initUrl, account);
+
+        final initResponse = await client.post(
+          initUrl,
+          headers: {
+            'Authorization': initAuthHeader,
+          },
         );
 
-        final streamedResponse = await client.send(request);
-        final response = await http.Response.fromStream(streamedResponse);
-
-        if (response.statusCode == 200) {
-          final responseData = jsonDecode(response.body);
-          return responseData['media_id_string'];
-        } else {
+        if (initResponse.statusCode != 200 && initResponse.statusCode != 201) {
           print(
-            'Media upload failed: ${response.statusCode} - ${response.body}',
+            'Media upload INIT failed: ${initResponse.statusCode} - ${initResponse.body}',
           );
           return null;
         }
+
+        final initData = jsonDecode(initResponse.body);
+        final mediaId = initData['media_id_string'] as String;
+
+        // Step 2: APPEND - Upload the media data
+        final appendUrl = Uri.parse(
+          'https://upload.twitter.com/1.1/media/upload.json?'
+          'command=APPEND&media_id=$mediaId&segment_index=0',
+        );
+        final appendAuthHeader = _generateOAuthHeader('POST', appendUrl, account);
+
+        final appendRequest = http.MultipartRequest('POST', appendUrl);
+        appendRequest.headers['Authorization'] = appendAuthHeader;
+        appendRequest.files.add(
+          http.MultipartFile.fromBytes(
+            'media',
+            bytes,
+            filename: attachment.fileName,
+          ),
+        );
+
+        final appendStreamedResponse = await client.send(appendRequest);
+        final appendResponse = await http.Response.fromStream(
+          appendStreamedResponse,
+        );
+
+        if (appendResponse.statusCode != 200 && appendResponse.statusCode != 204) {
+          print(
+            'Media upload APPEND failed: ${appendResponse.statusCode} - ${appendResponse.body}',
+          );
+          return null;
+        }
+
+        // Step 3: FINALIZE - Complete the upload
+        final finalizeUrl = Uri.parse(
+          'https://upload.twitter.com/1.1/media/upload.json?'
+          'command=FINALIZE&media_id=$mediaId',
+        );
+        final finalizeAuthHeader = _generateOAuthHeader('POST', finalizeUrl, account);
+
+        final finalizeResponse = await client.post(
+          finalizeUrl,
+          headers: {
+            'Authorization': finalizeAuthHeader,
+          },
+        );
+
+        if (finalizeResponse.statusCode != 200 && finalizeResponse.statusCode != 201) {
+          print(
+            'Media upload FINALIZE failed: ${finalizeResponse.statusCode} - ${finalizeResponse.body}',
+          );
+          return null;
+        }
+
+        print('Media uploaded successfully: $mediaId');
+        return mediaId;
       } finally {
         client.close();
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       print('Error uploading media: $e');
+      print('Stack trace: $stackTrace');
       return null;
     }
   }

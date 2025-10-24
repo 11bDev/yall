@@ -30,7 +30,7 @@ class BlueskyService extends SocialPlatformService {
   int get maxMediaAttachments => 4;
 
   @override
-  int get maxMediaFileSize => 1024 * 1024; // 1MB limit for Bluesky
+  int get maxMediaFileSize => 976560; // 976KB - Bluesky's actual limit (slightly under 1MB)
 
   @override
   List<String> get supportedMediaTypes => ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
