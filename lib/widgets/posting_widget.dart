@@ -257,12 +257,13 @@ class _PostingWidgetState extends State<PostingWidget> {
             ) &&
             !postManager.isPosting;
 
-        return Padding(
-          padding: const EdgeInsets.all(UbuntuSpacing.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: [
+        return SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(UbuntuSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
               // Text input area
               Card(
                 child: Padding(
@@ -407,7 +408,8 @@ class _PostingWidgetState extends State<PostingWidget> {
               ],
             ],
           ),
-        );
+        ),
+      );
       },
     );
   }
