@@ -17,12 +17,14 @@ import '../models/post_data.dart';
 import '../models/media_attachment.dart';
 import 'error_handler.dart';
 import 'social_platform_service.dart';
+import 'image_service.dart';
 
 /// Service for interacting with Nostr relays
 class NostrService extends SocialPlatformService {
   final Map<String, WebSocketChannel> _activeConnections = {};
   final Random _random = Random.secure();
   final ErrorHandler _errorHandler = ErrorHandler();
+  final ImageService _imageService = ImageService();
   List<String> _relays;
 
   /// Initialize with custom relays or use defaults
@@ -1066,6 +1068,22 @@ class NostrService extends SocialPlatformService {
       throw Exception('No file data available for upload');
     }
 
+    // Strip EXIF/metadata from images for privacy
+    // This is critical for Nostr uploads to protect user privacy
+    print('Stripping EXIF metadata from image: ${attachment.fileName}');
+    final mimeType = _getMimeType(attachment.fileName);
+    
+    // Only strip metadata from actual images, not other file types
+    if (mimeType.startsWith('image/') && mimeType != 'image/gif') {
+      try {
+        fileBytes = await _imageService.stripMetadata(fileBytes, mimeType: mimeType);
+        print('EXIF metadata stripped, new size: ${fileBytes.length} bytes');
+      } catch (e) {
+        print('Warning: Failed to strip metadata, uploading original: $e');
+        // Continue with original file if stripping fails
+      }
+    }
+
     // Create authorization header for Blossom
     final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     
@@ -1089,10 +1107,6 @@ class NostrService extends SocialPlatformService {
     // Debug logging
     print('Uploading to Blossom server: $normalizedBlossomServer');
     print('Upload URL: $uploadUrl');
-
-    // Detect proper MIME type from file extension
-    final mimeType = _getMimeType(attachment.fileName);
-    
     print('File: ${attachment.fileName}, detected MIME type: $mimeType');
     
     // Create multipart request - Blossom uses PUT method

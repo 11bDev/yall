@@ -489,6 +489,52 @@ class ImageService {
       throw ImageServiceException('Failed to compress image: ${e.toString()}');
     }
   }
+
+  /// Strip EXIF metadata from an image
+  /// Decodes and re-encodes the image to remove all metadata
+  Future<Uint8List> stripMetadata(Uint8List imageBytes, {String? mimeType}) async {
+    try {
+      final image = img.decodeImage(imageBytes);
+      if (image == null) {
+        throw ImageServiceException('Failed to decode image for metadata removal');
+      }
+
+      // Determine output format based on mime type or original format
+      Uint8List strippedBytes;
+      
+      if (mimeType != null) {
+        if (mimeType.contains('png')) {
+          strippedBytes = Uint8List.fromList(img.encodePng(image));
+        } else if (mimeType.contains('gif')) {
+          strippedBytes = Uint8List.fromList(img.encodeGif(image));
+        } else {
+          // Default to JPEG for all other types (webp, jpeg, etc.)
+          strippedBytes = Uint8List.fromList(img.encodeJpg(image, quality: 95));
+        }
+      } else {
+        // Try to detect format from original bytes
+        if (imageBytes.length >= 4) {
+          if (imageBytes[0] == 0x89 && imageBytes[1] == 0x50) {
+            // PNG signature
+            strippedBytes = Uint8List.fromList(img.encodePng(image));
+          } else if (imageBytes[0] == 0x47 && imageBytes[1] == 0x49) {
+            // GIF signature
+            strippedBytes = Uint8List.fromList(img.encodeGif(image));
+          } else {
+            // Default to JPEG
+            strippedBytes = Uint8List.fromList(img.encodeJpg(image, quality: 95));
+          }
+        } else {
+          // Fallback to JPEG
+          strippedBytes = Uint8List.fromList(img.encodeJpg(image, quality: 95));
+        }
+      }
+
+      return strippedBytes;
+    } catch (e) {
+      throw ImageServiceException('Failed to strip metadata: ${e.toString()}');
+    }
+  }
 }
 
 /// Result of file validation
