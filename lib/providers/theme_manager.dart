@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/secure_storage_service.dart';
 import '../models/app_settings.dart';
-import '../design_system/ubuntu_constants.dart';
 
 /// Exception thrown when theme operations fail
 class ThemeException implements Exception {

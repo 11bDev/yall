@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -86,10 +84,7 @@ class _ThemeSettingsTabState extends State<ThemeSettingsTab> {
               _buildThemeSection(context, themeManager),
               const SizedBox(height: 24),
               _buildAppearanceSection(context),
-              if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) ...[
-                const SizedBox(height: 24),
-                _buildBehaviorSection(context),
-              ],
+
               const SizedBox(height: 32),
               _buildActionButtons(context, themeManager),
             ],
@@ -274,61 +269,6 @@ class _ThemeSettingsTabState extends State<ThemeSettingsTab> {
                 _tempSettings.copyWith(confirmBeforePosting: value),
               ),
               secondary: const Icon(Icons.help_outline),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBehaviorSection(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.settings,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Application Behavior',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            SwitchListTile(
-              title: const Text('Minimize to System Tray'),
-              subtitle: const Text(
-                'Allow application to minimize to system tray',
-              ),
-              value: _tempSettings.minimizeToTray,
-              onChanged: (value) =>
-                  _updateSetting(_tempSettings.copyWith(minimizeToTray: value)),
-              secondary: const Icon(Icons.minimize),
-            ),
-            SwitchListTile(
-              title: const Text('Close to System Tray'),
-              subtitle: const Text(
-                'Minimize to tray instead of closing when X button is clicked',
-              ),
-              value: _tempSettings.closeToTray,
-              onChanged: (value) =>
-                  _updateSetting(_tempSettings.copyWith(closeToTray: value)),
-              secondary: const Icon(Icons.close),
-            ),
-            SwitchListTile(
-              title: const Text('Start Minimized'),
-              subtitle: const Text('Start the application minimized to tray'),
-              value: _tempSettings.startMinimized,
-              onChanged: (value) =>
-                  _updateSetting(_tempSettings.copyWith(startMinimized: value)),
-              secondary: const Icon(Icons.launch),
             ),
           ],
         ),

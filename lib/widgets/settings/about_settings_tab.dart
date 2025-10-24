@@ -36,20 +36,13 @@ class _AboutSettingsTabState extends State<AboutSettingsTab> {
   }
 
   String _getPlatformName() {
-    if (Platform.isLinux) return 'Linux';
-    if (Platform.isWindows) return 'Windows';
-    if (Platform.isMacOS) return 'macOS';
     if (Platform.isAndroid) return 'Android';
-    if (Platform.isIOS) return 'iOS';
     return 'Unknown';
   }
 
   String _getArchitecture() {
     // For now, we'll show the basic architecture info
     // This could be enhanced with more detailed system information
-    if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
-      return 'x86_64';
-    }
     return 'Unknown';
   }
 

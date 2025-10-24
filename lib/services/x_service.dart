@@ -128,9 +128,9 @@ class XService extends SocialPlatformService {
       final tweetData = <String, dynamic>{'text': postData.content};
 
       if (mediaIds.isNotEmpty) {
-        // X API v2 expects media_ids as a top-level array (not nested in media object)
+        // X API v2 expects media_ids as an array of strings
         tweetData['media'] = {
-          'media_ids': mediaIds.map((id) => id.toString()).toList(),
+          'media_ids': mediaIds, // Already strings from API response
         };
       }
       
@@ -140,11 +140,11 @@ class XService extends SocialPlatformService {
       print('X Post - Tweet data: ${jsonEncode(tweetData)}');
 
       final url = Uri.parse('https://api.twitter.com/2/tweets');
+      // For JSON body requests, don't include body in OAuth signature
       final authHeader = _generateOAuthHeader(
         'POST',
         url,
         account,
-        jsonEncode(tweetData),
       );
 
       final client = http.Client();
@@ -189,9 +189,8 @@ class XService extends SocialPlatformService {
   String _generateOAuthHeader(
     String method,
     Uri url,
-    Account account, [
-    String? body,
-  ]) {
+    Account account,
+  ) {
     final consumerKey = account.credentials['api_key']!;
     final consumerSecret = account.credentials['api_secret']!;
     final accessToken = account.credentials['access_token']!;

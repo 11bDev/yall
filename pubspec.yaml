@@ -1,5 +1,5 @@
 name: yall
-description: A multi-platform social media posting application
+description: An Android-only social media posting application
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.1.0+11
+version: 1.1.1+12
 
 environment:
   sdk: ^3.5.0
@@ -30,10 +30,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.8
 
   # State management
   provider: ^6.1.2
@@ -56,12 +52,6 @@ dependencies:
   pointycastle: ^4.0.0
   hex: ^0.2.0
 
-  # System tray integration
-  system_tray: ^2.0.3
-
-  # Window management
-  window_manager: ^0.5.1
-
   # UUID generation
   uuid: ^3.0.7
   bech32: ^0.2.2
@@ -74,8 +64,6 @@ dependencies:
   image: ^4.2.0
   path: ^1.9.0
   mime: ^2.0.0
-  yaru: ^8.2.0
-  handy_window: ^0.4.0
 
   # URL launching for OAuth flows
   url_launcher: ^6.3.2
@@ -114,33 +102,10 @@ flutter:
     - assets/icons/
     - assets/fonts/
 
-  # Ubuntu fonts for better Ubuntu integration
-  fonts:
-    - family: Ubuntu
-      fonts:
-        - asset: assets/fonts/Ubuntu-Regular.ttf
-        - asset: assets/fonts/Ubuntu-Italic.ttf
-          style: italic
-    - family: UbuntuMono
-      fonts:
-        - asset: assets/fonts/UbuntuMono-Regular.ttf
-
 # Flutter Launcher Icons configuration
 flutter_launcher_icons:
   android: true
-  ios: true
-  web:
-    generate: true
-    image_path: "assets/icons/app_icon.png"
-  windows:
-    generate: true
-    image_path: "assets/icons/app_icon.png"
-  macos:
-    generate: true
-    image_path: "assets/icons/app_icon.png"
-  linux:
-    generate: true
-    image_path: "assets/icons/app_icon.png"
+  ios: false
   image_path: "assets/icons/app_icon.png"
   min_sdk_android: 21
 

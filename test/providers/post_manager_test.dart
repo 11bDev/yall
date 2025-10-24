@@ -5,6 +5,7 @@ import 'package:mockito/annotations.dart';
 import 'package:yall/models/account.dart';
 import 'package:yall/models/post_result.dart';
 import 'package:yall/models/platform_type.dart';
+import 'package:yall/models/post_data.dart';
 import 'package:yall/providers/post_manager.dart';
 import 'package:yall/services/social_platform_service.dart';
 
@@ -102,14 +103,14 @@ void main() {
 
         // Short content should be valid for all platforms
         var validation = postManager.validateCharacterLimits(
-          shortContent,
+          PostData(content: shortContent),
           {PlatformType.mastodon, PlatformType.bluesky, PlatformType.nostr},
         );
         expect(validation.isValid, true);
 
         // Medium content should be valid for all platforms
         validation = postManager.validateCharacterLimits(
-          mediumContent,
+          PostData(content: mediumContent),
           {PlatformType.mastodon, PlatformType.bluesky, PlatformType.nostr},
         );
         expect(validation.isValid, true);
@@ -118,7 +119,7 @@ void main() {
         when(mockMastodonService.isContentValid(longContent)).thenReturn(true);
         when(mockBlueskyService.isContentValid(longContent)).thenReturn(false);
         validation = postManager.validateCharacterLimits(
-          longContent,
+          PostData(content: longContent),
           {PlatformType.mastodon, PlatformType.bluesky},
         );
         expect(validation.isValid, false);
@@ -130,7 +131,7 @@ void main() {
         when(mockBlueskyService.isContentValid(veryLongContent)).thenReturn(false);
         when(mockNostrService.isContentValid(veryLongContent)).thenReturn(true);
         validation = postManager.validateCharacterLimits(
-          veryLongContent,
+          PostData(content: veryLongContent),
           {PlatformType.mastodon, PlatformType.bluesky, PlatformType.nostr},
         );
         expect(validation.isValid, false);
@@ -141,7 +142,7 @@ void main() {
 
       test('should handle empty platform set', () {
         const content = 'Hello world!';
-        final validation = postManager.validateCharacterLimits(content, {});
+        final validation = postManager.validateCharacterLimits(PostData(content: content), {});
         expect(validation.isValid, false);
         expect(validation.errorMessage, contains('No platforms selected'));
       });
@@ -178,23 +179,23 @@ void main() {
       test('should return true for valid content and platforms', () {
         const content = 'Hello world!';
         when(mockMastodonService.isContentValid(content)).thenReturn(true);
-        final canPost = postManager.canPost(content, {PlatformType.mastodon});
+        final canPost = postManager.canPost(PostData(content: content), {PlatformType.mastodon});
         expect(canPost, true);
       });
 
       test('should return false for empty content', () {
-        final canPost = postManager.canPost('', {PlatformType.mastodon});
+        final canPost = postManager.canPost(PostData(content: ''), {PlatformType.mastodon});
         expect(canPost, false);
       });
 
       test('should return false for whitespace-only content', () {
-        final canPost = postManager.canPost('   ', {PlatformType.mastodon});
+        final canPost = postManager.canPost(PostData(content: '   '), {PlatformType.mastodon});
         expect(canPost, false);
       });
 
       test('should return false for empty platform set', () {
         const content = 'Hello world!';
-        final canPost = postManager.canPost(content, {});
+        final canPost = postManager.canPost(PostData(content: content), {});
         expect(canPost, false);
       });
 
@@ -202,32 +203,32 @@ void main() {
         const content = 'Hello world!';
         when(mockMastodonService.isContentValid(content)).thenReturn(true);
         postManager.setPostingForTesting(true);
-        final canPost = postManager.canPost(content, {PlatformType.mastodon});
+        final canPost = postManager.canPost(PostData(content: content), {PlatformType.mastodon});
         expect(canPost, false);
       });
 
       test('should return false for content exceeding character limits', () {
         final longContent = 'A' * 400; // Exceeds Bluesky limit
         when(mockBlueskyService.isContentValid(longContent)).thenReturn(false);
-        final canPost = postManager.canPost(longContent, {PlatformType.bluesky});
+        final canPost = postManager.canPost(PostData(content: longContent), {PlatformType.bluesky});
         expect(canPost, false);
       });
     });
 
     group('publishToSelectedPlatforms', () {
       test('should successfully post to single platform', () async {
-        const content = 'Hello world!';
+        final postData = PostData(content: 'Hello world!');
         final selectedPlatforms = {PlatformType.mastodon};
         final selectedAccounts = {PlatformType.mastodon: mastodonAccount};
 
         // Mock successful posting
-        when(mockMastodonService.isContentValid(content)).thenReturn(true);
+        when(mockMastodonService.isContentValid(postData.content)).thenReturn(true);
         when(mockMastodonService.hasRequiredCredentials(mastodonAccount)).thenReturn(true);
-        when(mockMastodonService.publishPost(content, mastodonAccount))
-            .thenAnswer((_) async => PostResult.empty(content).addPlatformResult(PlatformType.mastodon, true));
+        when(mockMastodonService.publishPost(postData, mastodonAccount))
+            .thenAnswer((_) async => PostResult.empty(postData.content).addPlatformResult(PlatformType.mastodon, true));
 
         final result = await postManager.publishToSelectedPlatforms(
-          content,
+          postData,
           selectedPlatforms,
           selectedAccounts,
         );
@@ -237,11 +238,11 @@ void main() {
         expect(postManager.lastPostResult, equals(result));
         expect(postManager.isPosting, false);
 
-        verify(mockMastodonService.publishPost(content, mastodonAccount)).called(1);
+        verify(mockMastodonService.publishPost(postData, mastodonAccount)).called(1);
       });
 
       test('should successfully post to multiple platforms in parallel', () async {
-        const content = 'Hello world!';
+        final postData = PostData(content: 'Hello world!');
         final selectedPlatforms = {PlatformType.mastodon, PlatformType.bluesky};
         final selectedAccounts = {
           PlatformType.mastodon: mastodonAccount,
@@ -249,18 +250,18 @@ void main() {
         };
 
         // Mock successful posting for both platforms
-        when(mockMastodonService.isContentValid(content)).thenReturn(true);
+        when(mockMastodonService.isContentValid(postData.content)).thenReturn(true);
         when(mockMastodonService.hasRequiredCredentials(mastodonAccount)).thenReturn(true);
-        when(mockMastodonService.publishPost(content, mastodonAccount))
-            .thenAnswer((_) async => PostResult.empty(content).addPlatformResult(PlatformType.mastodon, true));
+        when(mockMastodonService.publishPost(postData, mastodonAccount))
+            .thenAnswer((_) async => PostResult.empty(postData.content).addPlatformResult(PlatformType.mastodon, true));
 
-        when(mockBlueskyService.isContentValid(content)).thenReturn(true);
+        when(mockBlueskyService.isContentValid(postData.content)).thenReturn(true);
         when(mockBlueskyService.hasRequiredCredentials(blueskyAccount)).thenReturn(true);
-        when(mockBlueskyService.publishPost(content, blueskyAccount))
-            .thenAnswer((_) async => PostResult.empty(content).addPlatformResult(PlatformType.bluesky, true));
+        when(mockBlueskyService.publishPost(postData, blueskyAccount))
+            .thenAnswer((_) async => PostResult.empty(postData.content).addPlatformResult(PlatformType.bluesky, true));
 
         final result = await postManager.publishToSelectedPlatforms(
-          content,
+          postData,
           selectedPlatforms,
           selectedAccounts,
         );
@@ -269,12 +270,12 @@ void main() {
         expect(result.successfulPlatforms, containsAll([PlatformType.mastodon, PlatformType.bluesky]));
         expect(result.totalPlatforms, 2);
 
-        verify(mockMastodonService.publishPost(content, mastodonAccount)).called(1);
-        verify(mockBlueskyService.publishPost(content, blueskyAccount)).called(1);
+        verify(mockMastodonService.publishPost(postData, mastodonAccount)).called(1);
+        verify(mockBlueskyService.publishPost(postData, blueskyAccount)).called(1);
       });
 
       test('should handle partial posting failures', () async {
-        const content = 'Hello world!';
+        final postData = PostData(content: 'Hello world!');
         final selectedPlatforms = {PlatformType.mastodon, PlatformType.bluesky};
         final selectedAccounts = {
           PlatformType.mastodon: mastodonAccount,
@@ -282,15 +283,15 @@ void main() {
         };
 
         // Mock successful posting for Mastodon, failure for Bluesky
-        when(mockMastodonService.isContentValid(content)).thenReturn(true);
+        when(mockMastodonService.isContentValid(postData.content)).thenReturn(true);
         when(mockMastodonService.hasRequiredCredentials(mastodonAccount)).thenReturn(true);
-        when(mockMastodonService.publishPost(content, mastodonAccount))
-            .thenAnswer((_) async => PostResult.empty(content).addPlatformResult(PlatformType.mastodon, true));
+        when(mockMastodonService.publishPost(postData, mastodonAccount))
+            .thenAnswer((_) async => PostResult.empty(postData.content).addPlatformResult(PlatformType.mastodon, true));
 
-        when(mockBlueskyService.isContentValid(content)).thenReturn(true);
+        when(mockBlueskyService.isContentValid(postData.content)).thenReturn(true);
         when(mockBlueskyService.hasRequiredCredentials(blueskyAccount)).thenReturn(true);
-        when(mockBlueskyService.publishPost(content, blueskyAccount))
-            .thenAnswer((_) async => PostResult.empty(content).addPlatformResult(
+        when(mockBlueskyService.publishPost(postData, blueskyAccount))
+            .thenAnswer((_) async => PostResult.empty(postData.content).addPlatformResult(
               PlatformType.bluesky,
               false,
               error: 'Network error',
@@ -298,7 +299,7 @@ void main() {
             ));
 
         final result = await postManager.publishToSelectedPlatforms(
-          content,
+          postData,
           selectedPlatforms,
           selectedAccounts,
         );
@@ -312,7 +313,7 @@ void main() {
       });
 
       test('should handle all platforms failing', () async {
-        const content = 'Hello world!';
+        final postData = PostData(content: 'Hello world!');
         final selectedPlatforms = {PlatformType.mastodon, PlatformType.bluesky};
         final selectedAccounts = {
           PlatformType.mastodon: mastodonAccount,
@@ -320,20 +321,20 @@ void main() {
         };
 
         // Mock failures for both platforms
-        when(mockMastodonService.isContentValid(content)).thenReturn(true);
+        when(mockMastodonService.isContentValid(postData.content)).thenReturn(true);
         when(mockMastodonService.hasRequiredCredentials(mastodonAccount)).thenReturn(true);
-        when(mockMastodonService.publishPost(content, mastodonAccount))
-            .thenAnswer((_) async => PostResult.empty(content).addPlatformResult(
+        when(mockMastodonService.publishPost(postData, mastodonAccount))
+            .thenAnswer((_) async => PostResult.empty(postData.content).addPlatformResult(
               PlatformType.mastodon,
               false,
               error: 'Auth error',
               errorType: PostErrorType.authenticationError,
             ));
 
-        when(mockBlueskyService.isContentValid(content)).thenReturn(true);
+        when(mockBlueskyService.isContentValid(postData.content)).thenReturn(true);
         when(mockBlueskyService.hasRequiredCredentials(blueskyAccount)).thenReturn(true);
-        when(mockBlueskyService.publishPost(content, blueskyAccount))
-            .thenAnswer((_) async => PostResult.empty(content).addPlatformResult(
+        when(mockBlueskyService.publishPost(postData, blueskyAccount))
+            .thenAnswer((_) async => PostResult.empty(postData.content).addPlatformResult(
               PlatformType.bluesky,
               false,
               error: 'Server error',
@@ -341,7 +342,7 @@ void main() {
             ));
 
         final result = await postManager.publishToSelectedPlatforms(
-          content,
+          postData,
           selectedPlatforms,
           selectedAccounts,
         );
@@ -353,27 +354,27 @@ void main() {
       });
 
       test('should throw exception for empty content', () async {
-        const content = '';
+        final postData = PostData(content: '');
         final selectedPlatforms = {PlatformType.mastodon};
         final selectedAccounts = {PlatformType.mastodon: mastodonAccount};
 
         expect(
-          () => postManager.publishToSelectedPlatforms(content, selectedPlatforms, selectedAccounts),
+          () => postManager.publishToSelectedPlatforms(postData, selectedPlatforms, selectedAccounts),
           throwsA(isA<PostManagerException>().having(
             (e) => e.message,
             'message',
-            contains('Content cannot be empty'),
+            contains('Post must have content or media attachments'),
           )),
         );
       });
 
       test('should throw exception for no platforms selected', () async {
-        const content = 'Hello world!';
+        final postData = PostData(content: 'Hello world!');
         final selectedPlatforms = <PlatformType>{};
         final selectedAccounts = <PlatformType, Account>{};
 
         expect(
-          () => postManager.publishToSelectedPlatforms(content, selectedPlatforms, selectedAccounts),
+          () => postManager.publishToSelectedPlatforms(postData, selectedPlatforms, selectedAccounts),
           throwsA(isA<PostManagerException>().having(
             (e) => e.message,
             'message',
@@ -383,15 +384,15 @@ void main() {
       });
 
       test('should throw exception for content exceeding character limits', () async {
-        final longContent = 'A' * 400; // Exceeds Bluesky limit
+        final postData = PostData(content: 'A' * 400); // Exceeds Bluesky limit
         final selectedPlatforms = {PlatformType.bluesky};
         final selectedAccounts = {PlatformType.bluesky: blueskyAccount};
 
         // Mock that the content is too long for Bluesky
-        when(mockBlueskyService.isContentValid(longContent)).thenReturn(false);
+        when(mockBlueskyService.isContentValid(postData.content)).thenReturn(false);
 
         expect(
-          () => postManager.publishToSelectedPlatforms(longContent, selectedPlatforms, selectedAccounts),
+          () => postManager.publishToSelectedPlatforms(postData, selectedPlatforms, selectedAccounts),
           throwsA(isA<PostManagerException>().having(
             (e) => e.message,
             'message',
@@ -401,15 +402,15 @@ void main() {
       });
 
       test('should throw exception for missing account', () async {
-        const content = 'Hello world!';
+        final postData = PostData(content: 'Hello world!');
         final selectedPlatforms = {PlatformType.mastodon};
         final selectedAccounts = <PlatformType, Account>{}; // No account provided
 
         // Mock that content is valid to pass character limit validation
-        when(mockMastodonService.isContentValid(content)).thenReturn(true);
+        when(mockMastodonService.isContentValid(postData.content)).thenReturn(true);
 
         expect(
-          () => postManager.publishToSelectedPlatforms(content, selectedPlatforms, selectedAccounts),
+          () => postManager.publishToSelectedPlatforms(postData, selectedPlatforms, selectedAccounts),
           throwsA(isA<PostManagerException>().having(
             (e) => e.message,
             'message',
@@ -419,16 +420,16 @@ void main() {
       });
 
       test('should throw exception for inactive account', () async {
-        const content = 'Hello world!';
+        final postData = PostData(content: 'Hello world!');
         final selectedPlatforms = {PlatformType.mastodon};
         final inactiveAccount = mastodonAccount.copyWith(isActive: false);
         final selectedAccounts = {PlatformType.mastodon: inactiveAccount};
 
         // Mock that content is valid to pass character limit validation
-        when(mockMastodonService.isContentValid(content)).thenReturn(true);
+        when(mockMastodonService.isContentValid(postData.content)).thenReturn(true);
 
         expect(
-          () => postManager.publishToSelectedPlatforms(content, selectedPlatforms, selectedAccounts),
+          () => postManager.publishToSelectedPlatforms(postData, selectedPlatforms, selectedAccounts),
           throwsA(isA<PostManagerException>().having(
             (e) => e.message,
             'message',
@@ -438,14 +439,14 @@ void main() {
       });
 
       test('should throw exception when posting is already in progress', () async {
-        const content = 'Hello world!';
+        final postData = PostData(content: 'Hello world!');
         final selectedPlatforms = {PlatformType.mastodon};
         final selectedAccounts = {PlatformType.mastodon: mastodonAccount};
 
         postManager.setPostingForTesting(true);
 
         expect(
-          () => postManager.publishToSelectedPlatforms(content, selectedPlatforms, selectedAccounts),
+          () => postManager.publishToSelectedPlatforms(postData, selectedPlatforms, selectedAccounts),
           throwsA(isA<PostManagerException>().having(
             (e) => e.message,
             'message',
@@ -455,7 +456,7 @@ void main() {
       });
 
       test('should handle platform service unavailable', () async {
-        const content = 'Hello world!';
+        final postData = PostData(content: 'Hello world!');
         final selectedPlatforms = {PlatformType.mastodon};
         final selectedAccounts = {PlatformType.mastodon: mastodonAccount};
 
@@ -463,7 +464,7 @@ void main() {
         final postManagerWithoutService = PostManager(platformServices: {});
 
         final result = await postManagerWithoutService.publishToSelectedPlatforms(
-          content,
+          postData,
           selectedPlatforms,
           selectedAccounts,
         );
@@ -474,23 +475,23 @@ void main() {
       });
 
       test('should set posting state correctly during operation', () async {
-        const content = 'Hello world!';
+        final postData = PostData(content: 'Hello world!');
         final selectedPlatforms = {PlatformType.mastodon};
         final selectedAccounts = {PlatformType.mastodon: mastodonAccount};
 
         // Mock delayed response to test posting state
-        when(mockMastodonService.isContentValid(content)).thenReturn(true);
+        when(mockMastodonService.isContentValid(postData.content)).thenReturn(true);
         when(mockMastodonService.hasRequiredCredentials(mastodonAccount)).thenReturn(true);
-        when(mockMastodonService.publishPost(content, mastodonAccount))
+        when(mockMastodonService.publishPost(postData, mastodonAccount))
             .thenAnswer((_) async {
           await Future.delayed(const Duration(milliseconds: 100));
-          return PostResult.empty(content).addPlatformResult(PlatformType.mastodon, true);
+          return PostResult.empty(postData.content).addPlatformResult(PlatformType.mastodon, true);
         });
 
         expect(postManager.isPosting, false);
 
         final future = postManager.publishToSelectedPlatforms(
-          content,
+          postData,
           selectedPlatforms,
           selectedAccounts,
         );
@@ -544,7 +545,7 @@ void main() {
         when(mockBlueskyService.isContentValid(shortContent)).thenReturn(true);
 
         final shortValidation = postManager.validateContentForPlatforms(
-          shortContent,
+          PostData(content: shortContent),
           {PlatformType.mastodon, PlatformType.bluesky},
         );
 
@@ -556,7 +557,7 @@ void main() {
         when(mockBlueskyService.isContentValid(longContent)).thenReturn(false);
 
         final longValidation = postManager.validateContentForPlatforms(
-          longContent,
+          PostData(content: longContent),
           {PlatformType.mastodon, PlatformType.bluesky},
         );
 
@@ -567,16 +568,16 @@ void main() {
 
     group('Error Handling', () {
       test('should handle service exceptions gracefully', () async {
-        const content = 'Hello world!';
+        final postData = PostData(content: 'Hello world!');
         final selectedPlatforms = {PlatformType.mastodon};
         final selectedAccounts = {PlatformType.mastodon: mastodonAccount};
 
-        when(mockMastodonService.isContentValid(content)).thenReturn(true);
+        when(mockMastodonService.isContentValid(postData.content)).thenReturn(true);
         when(mockMastodonService.hasRequiredCredentials(mastodonAccount)).thenReturn(true);
-        when(mockMastodonService.publishPost(content, mastodonAccount))
+        when(mockMastodonService.publishPost(postData, mastodonAccount))
             .thenThrow(Exception('Service error'));
-        when(mockMastodonService.handleError(content, any))
-            .thenReturn(PostResult.empty(content).addPlatformResult(
+        when(mockMastodonService.handleError(postData, any))
+            .thenReturn(PostResult.empty(postData.content).addPlatformResult(
               PlatformType.mastodon,
               false,
               error: 'Service error',
@@ -584,7 +585,7 @@ void main() {
             ));
 
         final result = await postManager.publishToSelectedPlatforms(
-          content,
+          postData,
           selectedPlatforms,
           selectedAccounts,
         );
@@ -594,15 +595,15 @@ void main() {
       });
 
       test('should handle content validation failures', () async {
-        const content = 'Hello world!';
+        final postData = PostData(content: 'Hello world!');
         final selectedPlatforms = {PlatformType.mastodon};
         final selectedAccounts = {PlatformType.mastodon: mastodonAccount};
 
         // Mock that content passes character limit validation but fails during posting
-        when(mockMastodonService.isContentValid(content)).thenReturn(true);
+        when(mockMastodonService.isContentValid(postData.content)).thenReturn(true);
         when(mockMastodonService.hasRequiredCredentials(mastodonAccount)).thenReturn(true);
-        when(mockMastodonService.publishPost(content, mastodonAccount))
-            .thenAnswer((_) async => PostResult.empty(content).addPlatformResult(
+        when(mockMastodonService.publishPost(postData, mastodonAccount))
+            .thenAnswer((_) async => PostResult.empty(postData.content).addPlatformResult(
               PlatformType.mastodon,
               false,
               error: 'Content validation failed during posting',
@@ -610,7 +611,7 @@ void main() {
             ));
 
         final result = await postManager.publishToSelectedPlatforms(
-          content,
+          postData,
           selectedPlatforms,
           selectedAccounts,
         );
@@ -621,17 +622,17 @@ void main() {
       });
 
       test('should handle missing credentials', () async {
-        const content = 'Hello world!';
+        final postData = PostData(content: 'Hello world!');
         final selectedPlatforms = {PlatformType.mastodon};
         final selectedAccounts = {PlatformType.mastodon: mastodonAccount};
 
-        when(mockMastodonService.isContentValid(content)).thenReturn(true);
+        when(mockMastodonService.isContentValid(postData.content)).thenReturn(true);
         when(mockMastodonService.hasRequiredCredentials(mastodonAccount)).thenReturn(false);
         when(mockMastodonService.createFailureResult(
-          content,
+          postData,
           'Account missing required credentials',
           PostErrorType.invalidCredentials,
-        )).thenReturn(PostResult.empty(content).addPlatformResult(
+        )).thenReturn(PostResult.empty(postData.content).addPlatformResult(
           PlatformType.mastodon,
           false,
           error: 'Account missing required credentials',
@@ -639,7 +640,7 @@ void main() {
         ));
 
         final result = await postManager.publishToSelectedPlatforms(
-          content,
+          postData,
           selectedPlatforms,
           selectedAccounts,
         );

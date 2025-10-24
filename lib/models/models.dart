@@ -7,5 +7,3 @@ export 'posting_progress.dart';
 export 'window_state.dart';
 export 'media_attachment.dart';
 export 'post_data.dart';
-export 'media_attachment.dart';
-export 'post_data.dart';
