@@ -128,14 +128,15 @@ class XService extends SocialPlatformService {
       final tweetData = <String, dynamic>{'text': postData.content};
 
       if (mediaIds.isNotEmpty) {
-        // X API v2 expects media object with media_ids array
+        // X API v2 expects media_ids as a top-level array (not nested in media object)
         tweetData['media'] = {
-          'media_ids': mediaIds,
+          'media_ids': mediaIds.map((id) => id.toString()).toList(),
         };
       }
       
       // Debug logging
-      print('X Post - Media IDs to attach: $mediaIds');
+      print('X Post - Media IDs count: ${mediaIds.length}');
+      print('X Post - Media IDs: $mediaIds');
       print('X Post - Tweet data: ${jsonEncode(tweetData)}');
 
       final url = Uri.parse('https://api.twitter.com/2/tweets');
@@ -365,7 +366,10 @@ class XService extends SocialPlatformService {
           return null;
         }
 
-        print('Media uploaded successfully: $mediaId');
+        print('Media upload FINALIZE response: ${finalizeResponse.body}');
+        print('Media uploaded successfully with ID: $mediaId');
+        
+        // Return the media_id_string
         return mediaId;
       } finally {
         client.close();
